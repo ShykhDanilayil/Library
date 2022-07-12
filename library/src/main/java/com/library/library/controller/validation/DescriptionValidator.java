@@ -13,5 +13,4 @@ public class DescriptionValidator implements ConstraintValidator<ValidDescriptio
     public boolean isValid(String bookDescription, ConstraintValidatorContext cxt) {
         return bookDescription.split(" ").length > 3;
     }
-
 }
