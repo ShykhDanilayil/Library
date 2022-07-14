@@ -8,4 +8,4 @@ JaCoCo report could be bound under `target/site/jacoco/index.html`. To generate 
 
 ### Starting project locally with docker-compose
 
-You can start this with a single command `docker-compose up`.
+You can start this application with a single command `docker-compose up`.
