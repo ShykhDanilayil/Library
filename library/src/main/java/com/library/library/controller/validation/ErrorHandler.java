@@ -1,4 +1,4 @@
-package com.library.library.controller;
+package com.library.library.controller.validation;
 
 import com.library.library.service.exception.AuthorAlreadyExistsException;
 import com.library.library.service.exception.EntityNotFoundException;
