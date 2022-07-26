@@ -1,6 +1,6 @@
 package com.library.library.controller.dto;
 
-import com.library.library.controller.validation.ValidDescription;
+import com.library.library.controller.validation.DescriptionValid;
 import lombok.Builder;
 import lombok.Data;
 
@@ -16,7 +16,7 @@ public class BookDto {
     @NotBlank
     public String title;
 
-    @ValidDescription
+    @DescriptionValid
     public String description;
 
     @Positive

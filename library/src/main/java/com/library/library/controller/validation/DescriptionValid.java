@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
 @Constraint(validatedBy = DescriptionValidator.class)
 @Target( { ElementType.METHOD, ElementType.FIELD })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ValidDescription {
+public @interface DescriptionValid {
 
     String message() default "Invalid book description";
 
