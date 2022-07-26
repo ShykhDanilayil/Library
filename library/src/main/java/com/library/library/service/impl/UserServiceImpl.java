@@ -6,7 +6,6 @@ import com.library.library.service.exception.EntityNotFoundException;
 import com.library.library.service.exception.UserAlreadyExistsException;
 import com.library.library.service.mapper.UserMapper;
 import com.library.library.service.model.Library;
-import com.library.library.service.model.Role;
 import com.library.library.service.model.User;
 import com.library.library.service.repository.LibraryRepository;
 import com.library.library.service.repository.UserRepository;
@@ -39,8 +38,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto getUser(String email) {
         log.info("Search User by email {}", email);
-        User user = userRepository.findUserByEmail(email).orElseThrow(() ->
-                new EntityNotFoundException(format("User with email %s is not found", email)));
+        User user = getUserByEmail(email);
         return UserMapper.INSTANCE.mapUserDto(user);
     }
 
@@ -70,7 +68,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDto updateUser(String email, UserDto userDto) {
         log.info("Updating user with email {}", email);
-        User user = UserMapper.INSTANCE.mapUser(getUser(email));
+        User user = getUserByEmail(email);
         populateUserWithPresentUserDtoFields(user, userDto);
         userRepository.save(user);
         log.info("User with email {} successfully updated", user.getEmail());
@@ -81,7 +79,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void addLibrary(String email, String libraryName) {
         log.info("User with email {} add library with name {}", email, libraryName);
-        User user = UserMapper.INSTANCE.mapUser(getUser(email));
+        User user = getUserByEmail(email);
         Library library = libraryRepository.getLibraryByLibraryName(libraryName).orElseThrow(() ->
                 new EntityNotFoundException(format("Library with name %s is not found", libraryName)));
 
@@ -97,22 +95,14 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void deleteUser(String email) {
         log.info("Delete User with email {}", email);
-        UserDto userDto = getUser(email);
-        userRepository.delete(UserMapper.INSTANCE.mapUser(userDto));
+        User user = getUserByEmail(email);
+        userRepository.delete(user);
         log.info("User with email {} successfully deleted", email);
     }
 
-    private User populateUserWithPresentUserDtoFields(User user, UserDto userDto) {
-        if (Objects.nonNull(userDto.getFirstName())) {
-            user.setFirstName(userDto.getFirstName());
-        }
-        if (Objects.nonNull(userDto.getLastName())) {
-            user.setLastName(userDto.getLastName());
-        }
-        if (Objects.nonNull(userDto.getEmail())) {
-            user.setEmail(userDto.getEmail());
-        }
-        return user;
+    private User getUserByEmail(String email) {
+        return userRepository.findUserByEmail(email).orElseThrow(() ->
+                new EntityNotFoundException(format("User with email %s is not found", email)));
     }
 
     private UserDto mapUserDto(User user) {
@@ -128,5 +118,39 @@ public class UserServiceImpl implements UserService {
                 .address(user.getAddress())
                 .postalCode(user.getPostalCode())
                 .build();
+    }
+
+    private User populateUserWithPresentUserDtoFields(User user, UserDto userDto) {
+        if (Objects.nonNull(userDto.getFirstName())) {
+            user.setFirstName(userDto.getFirstName());
+        }
+        if (Objects.nonNull(userDto.getLastName())) {
+            user.setLastName(userDto.getLastName());
+        }
+        if (Objects.nonNull(userDto.getEmail())) {
+            user.setEmail(userDto.getEmail());
+        }
+        if (Objects.nonNull(userDto.getRole())) {
+            user.setRole(userDto.getRole());
+        }
+        if (Objects.nonNull(userDto.getPhone())) {
+            user.setPhone(userDto.getPhone());
+        }
+        if (Objects.nonNull(userDto.getBirthday())) {
+            user.setBirthday(userDto.getBirthday());
+        }
+        if (Objects.nonNull(userDto.getCountry())) {
+            user.setCountry(userDto.getCountry());
+        }
+        if (Objects.nonNull(userDto.getCity())) {
+            user.setCity(userDto.getCity());
+        }
+        if (Objects.nonNull(userDto.getAddress())) {
+            user.setAddress(userDto.getAddress());
+        }
+        if (Objects.nonNull(userDto.getPostalCode())) {
+            user.setPostalCode(userDto.getPostalCode());
+        }
+        return user;
     }
 }
