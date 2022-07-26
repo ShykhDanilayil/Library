@@ -1,5 +1,6 @@
 package com.library.library.service.model;
 
+import com.library.library.controller.validation.PasswordValid;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -40,6 +41,7 @@ public class User {
     private String lastName;
     @Column(nullable = false, unique = true)
     private String email;
+    @PasswordValid
     private String password;
     @Enumerated(EnumType.STRING)
     private Role role;

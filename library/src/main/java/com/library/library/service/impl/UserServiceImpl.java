@@ -31,6 +31,12 @@ public class UserServiceImpl implements UserService {
     private final LibraryRepository libraryRepository;
 
     @Override
+    public boolean isEmailAlreadyInUse(String email) {
+        log.info("Checking email {}", email);
+        return userRepository.existsUserByEmail(email);
+    }
+
+    @Override
     public UserDto getUser(String email) {
         log.info("Search User by email {}", email);
         User user = userRepository.findUserByEmail(email).orElseThrow(() ->

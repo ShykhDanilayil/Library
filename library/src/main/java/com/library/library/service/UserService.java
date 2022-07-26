@@ -6,6 +6,8 @@ import org.springframework.data.domain.Pageable;
 
 public interface UserService {
 
+    boolean isEmailAlreadyInUse(String email);
+
     UserDto getUser(String email);
 
     Page<UserDto> pageUsers(Pageable pageable);
