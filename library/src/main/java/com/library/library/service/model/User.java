@@ -9,6 +9,8 @@ import org.hibernate.annotations.NamedNativeQuery;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -17,6 +19,8 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 
 @Data
@@ -36,8 +40,16 @@ public class User {
     private String lastName;
     @Column(nullable = false, unique = true)
     private String email;
-    private Instant writtenOn;
     private String password;
+    @Enumerated(EnumType.STRING)
+    private Role role;
+    private String phone;
+    private Date birthday;
+    private String country;
+    private String city;
+    private String address;
+    private String postalCode;
+    private Instant writtenOn;
     @ManyToMany(cascade = CascadeType.ALL)
     @JoinTable(name = "user_library", joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "libray_id"))

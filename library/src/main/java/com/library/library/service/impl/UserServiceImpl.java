@@ -6,19 +6,18 @@ import com.library.library.service.exception.EntityNotFoundException;
 import com.library.library.service.exception.UserAlreadyExistsException;
 import com.library.library.service.mapper.UserMapper;
 import com.library.library.service.model.Library;
+import com.library.library.service.model.Role;
 import com.library.library.service.model.User;
 import com.library.library.service.repository.LibraryRepository;
 import com.library.library.service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Objects;
 
 import static java.lang.String.format;
@@ -33,24 +32,23 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto getUser(String email) {
-        log.info("getUser by email {}", email);
+        log.info("Search User by email {}", email);
         User user = userRepository.findUserByEmail(email).orElseThrow(() ->
                 new EntityNotFoundException(format("User with email %s is not found", email)));
         return UserMapper.INSTANCE.mapUserDto(user);
     }
 
     @Override
-    public List<UserDto> listUsers() {
-        log.info("get all users");
-        Page<User> allUsers = userRepository.findAll(PageRequest.of(0, 12, Sort.by("firstName").and(Sort.by("lastName"))));
-        return UserMapper.INSTANCE.mapPageUserDto(allUsers.getContent());
+    public Page<UserDto> pageUsers(Pageable pageable) {
+        log.info("Get page users");
+        return userRepository.findAll(pageable).map(UserDto::new);
     }
 
     @Override
     @Transactional
     public UserDto createUser(UserDto userDto, String password) {
         String email = userDto.getEmail();
-        log.info("createUser with email {}", email);
+        log.info("Create User with email {}", email);
         if (userRepository.existsUserByEmail(email)) {
             throw new UserAlreadyExistsException(format("User with email %s exists", email));
         }
@@ -66,9 +64,8 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDto updateUser(String email, UserDto userDto) {
         log.info("Updating user with email {}", email);
-        User user = userRepository.findUserByEmail(email).orElseThrow(() ->
-                new EntityNotFoundException(format("User with email %s is not found", email)));
-        user = populateUserWithPresentUserDtoFields(user, userDto);
+        User user = UserMapper.INSTANCE.mapUser(getUser(email));
+        populateUserWithPresentUserDtoFields(user, userDto);
         userRepository.save(user);
         log.info("User with email {} successfully updated", user.getEmail());
         return UserMapper.INSTANCE.mapUserDto(user);
@@ -78,8 +75,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void addLibrary(String email, String libraryName) {
         log.info("User with email {} add library with name {}", email, libraryName);
-        User user = userRepository.findUserByEmail(email).orElseThrow(() ->
-                new EntityNotFoundException(format("User with email %s is not found", email)));
+        User user = UserMapper.INSTANCE.mapUser(getUser(email));
         Library library = libraryRepository.getLibraryByLibraryName(libraryName).orElseThrow(() ->
                 new EntityNotFoundException(format("Library with name %s is not found", libraryName)));
 
@@ -94,10 +90,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteUser(String email) {
-        log.info("deleteUser with email {}", email);
-        User user = userRepository.findUserByEmail(email).orElseThrow(() ->
-                new EntityNotFoundException(format("User with email %s is not found", email)));
-        userRepository.delete(user);
+        log.info("Delete User with email {}", email);
+        UserDto userDto = getUser(email);
+        userRepository.delete(UserMapper.INSTANCE.mapUser(userDto));
         log.info("User with email {} successfully deleted", email);
     }
 
