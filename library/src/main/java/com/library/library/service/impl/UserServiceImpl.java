@@ -120,7 +120,7 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
-    private User populateUserWithPresentUserDtoFields(User user, UserDto userDto) {
+    private void populateUserWithPresentUserDtoFields(User user, UserDto userDto) {
         if (Objects.nonNull(userDto.getFirstName())) {
             user.setFirstName(userDto.getFirstName());
         }
@@ -151,6 +151,5 @@ public class UserServiceImpl implements UserService {
         if (Objects.nonNull(userDto.getPostalCode())) {
             user.setPostalCode(userDto.getPostalCode());
         }
-        return user;
     }
 }
