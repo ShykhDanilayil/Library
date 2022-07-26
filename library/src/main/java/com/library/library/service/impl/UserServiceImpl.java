@@ -47,7 +47,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public Page<UserDto> pageUsers(Pageable pageable) {
         log.info("Get page users");
-        return userRepository.findAll(pageable).map(UserDto::new);
+        return userRepository.findAll(pageable).map(this::mapUserDto);
     }
 
     @Override
@@ -113,5 +113,20 @@ public class UserServiceImpl implements UserService {
             user.setEmail(userDto.getEmail());
         }
         return user;
+    }
+
+    private UserDto mapUserDto(User user) {
+        return UserDto.builder()
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .phone(user.getPhone())
+                .birthday(user.getBirthday())
+                .country(user.getCountry())
+                .city(user.getCity())
+                .address(user.getAddress())
+                .postalCode(user.getPostalCode())
+                .build();
     }
 }

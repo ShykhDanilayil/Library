@@ -41,17 +41,4 @@ public class UserDto {
     private String address;
     @PostalCode
     private String postalCode;
-
-    public UserDto(User user) {
-        this.firstName = user.getFirstName();
-        this.lastName = user.getLastName();
-        this.email = user.getEmail();
-        this.role = user.getRole();
-        this.phone = user.getPhone();
-        this.birthday = user.getBirthday();
-        this.country = user.getCountry();
-        this.city = user.getCity();
-        this.address = user.getAddress();
-        this.postalCode = user.getPostalCode();
-    }
 }
