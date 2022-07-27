@@ -1,5 +1,6 @@
 package com.library.library.service.model;
 
+import com.library.library.controller.dto.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,7 +21,6 @@ import javax.persistence.ManyToMany;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 
 @Data

@@ -4,7 +4,6 @@ import com.library.library.controller.validation.EmailValid;
 import com.library.library.controller.validation.PhoneNumberValid;
 import com.library.library.controller.validation.PostalCodeValid;
 import com.library.library.controller.validation.UniqueEmail;
-import com.library.library.service.model.Role;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
