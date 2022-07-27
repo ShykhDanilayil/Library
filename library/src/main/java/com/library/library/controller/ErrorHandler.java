@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import javax.validation.ConstraintViolationException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +26,13 @@ public class ErrorHandler {
         return ex.getBindingResult().getAllErrors().stream()
                 .map(err -> new Error(err.getDefaultMessage()))
                 .collect(Collectors.toList());
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Error handleConstraintViolationException(ConstraintViolationException ex) {
+        log.error("handleConstraintViolationException: exception {}", ex.getMessage(), ex);
+        return new Error(ex.getMessage());
     }
 
     @ExceptionHandler(EntityNotFoundException.class)
@@ -60,6 +68,5 @@ public class ErrorHandler {
     public String handleNullPointerException(NullPointerException ex) {
         return ex.getMessage();
     }
-
 }
 
