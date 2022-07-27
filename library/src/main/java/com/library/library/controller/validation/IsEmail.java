@@ -9,12 +9,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Documented
-@Constraint(validatedBy = PasswordValidator.class)
+@Constraint(validatedBy = IsEmailValidator.class)
 @Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface PasswordValid {
+public @interface IsEmail {
 
-    String message() default "Incorrect password format! It should contains at least one digit, one upper case or lower case letter and min length 6 symbols";
+    String message() default "This email doesn't exists!";
 
     Class<?>[] groups() default {};
 

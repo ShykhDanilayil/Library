@@ -1,6 +1,5 @@
 package com.library.library.service.model;
 
-import com.library.library.controller.validation.PasswordValid;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -35,13 +34,12 @@ import java.util.List;
 )
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String firstName;
     private String lastName;
     @Column(nullable = false, unique = true)
     private String email;
-    @PasswordValid
     private String password;
     @Enumerated(EnumType.STRING)
     private Role role;

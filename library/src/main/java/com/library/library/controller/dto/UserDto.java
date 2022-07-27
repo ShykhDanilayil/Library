@@ -1,11 +1,10 @@
 package com.library.library.controller.dto;
 
 import com.library.library.controller.validation.EmailValid;
-import com.library.library.controller.validation.PhoneNumber;
-import com.library.library.controller.validation.PostalCode;
+import com.library.library.controller.validation.PhoneNumberValid;
+import com.library.library.controller.validation.PostalCodeValid;
 import com.library.library.controller.validation.UniqueEmail;
 import com.library.library.service.model.Role;
-import com.library.library.service.model.User;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -27,7 +26,7 @@ public class UserDto {
     @EmailValid
     private String email;
     private Role role;
-    @PhoneNumber
+    @PhoneNumberValid
     private String phone;
     @DateTimeFormat(pattern = "dd/MM/yyyy")
     @Past
@@ -39,6 +38,6 @@ public class UserDto {
     private String city;
     @NotEmpty
     private String address;
-    @PostalCode
+    @PostalCodeValid
     private String postalCode;
 }
