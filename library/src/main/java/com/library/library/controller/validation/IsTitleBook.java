@@ -9,12 +9,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Documented
-@Constraint(validatedBy = IsEmailValidator.class)
+@Constraint(validatedBy = IsTitleBookValidator.class)
 @Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface IsEmail {
+public @interface IsTitleBook {
 
-    String message() default "This email doesn't exists!";
+    String message() default "This book title doesn't exists!";
 
     Class<?>[] groups() default {};
 

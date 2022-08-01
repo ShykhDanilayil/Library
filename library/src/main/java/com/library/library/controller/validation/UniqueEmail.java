@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface UniqueEmail {
 
-    String message() default "There is already user with this email!";
+    String message() default "There is already entity with this email!";
 
     Class<?>[] groups() default {};
 

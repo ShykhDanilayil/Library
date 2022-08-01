@@ -6,7 +6,7 @@ import javax.validation.ConstraintValidatorContext;
 public class DescriptionValidator implements ConstraintValidator<DescriptionValid, String> {
 
     @Override
-    public void initialize(DescriptionValid contactNumber) {
+    public void initialize(DescriptionValid descriptionValid) {
     }
 
     @Override

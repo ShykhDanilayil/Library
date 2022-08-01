@@ -7,7 +7,7 @@ import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
 @RequiredArgsConstructor
-public class IsEmailValidator implements ConstraintValidator<IsEmail, String> {
+public class IsEmailUserValidator implements ConstraintValidator<IsEmailUser, String> {
 
     private final UserService userService;
 
