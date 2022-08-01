@@ -2,7 +2,7 @@ package com.library.library.controller;
 
 import com.library.library.controller.dto.UserDto;
 import com.library.library.controller.validation.EmailValid;
-import com.library.library.controller.validation.IsEmail;
+import com.library.library.controller.validation.IsEmailUser;
 import com.library.library.controller.validation.PasswordValid;
 import com.library.library.service.UserService;
 import io.swagger.annotations.Api;
@@ -48,7 +48,7 @@ public class UserController {
 
     @ResponseStatus(HttpStatus.OK)
     @GetMapping(value = "/{email}")
-    public UserDto getUser(@PathVariable @EmailValid @IsEmail String email) {
+    public UserDto getUser(@PathVariable @EmailValid @IsEmailUser String email) {
         return userService.getUser(email);
     }
 
@@ -60,18 +60,12 @@ public class UserController {
 
     @ResponseStatus(HttpStatus.OK)
     @PutMapping(value = "/{email}")
-    public UserDto updateUser(@PathVariable @EmailValid @IsEmail String email, @RequestBody UserDto userDto) {
+    public UserDto updateUser(@PathVariable @EmailValid @IsEmailUser String email, @RequestBody UserDto userDto) {
         return userService.updateUser(email, userDto);
     }
 
-    @ResponseStatus(HttpStatus.OK)
-    @PostMapping(value = "/{email}/library/{libraryName}")
-    public void addLibrary(@PathVariable @EmailValid @IsEmail String email, @PathVariable String libraryName) {
-        userService.addLibrary(email, libraryName);
-    }
-
     @DeleteMapping(value = "/{email}")
-    public ResponseEntity<Void> deleteUser(@PathVariable @EmailValid @IsEmail String email) {
+    public ResponseEntity<Void> deleteUser(@PathVariable @EmailValid @IsEmailUser String email) {
         userService.deleteUser(email);
         return ResponseEntity.noContent().build();
     }

@@ -1,8 +1,9 @@
 package com.library.library.controller;
 
-import com.library.library.service.exception.AuthorAlreadyExistsException;
+import com.library.library.service.exception.BookNotAvailableException;
+import com.library.library.service.exception.BorrowedException;
 import com.library.library.service.exception.EntityNotFoundException;
-import com.library.library.service.exception.LibraryAlreadyExistsException;
+import com.library.library.service.exception.ReservedException;
 import com.library.library.service.exception.UserAlreadyExistsException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -42,20 +43,6 @@ public class ErrorHandler {
         return new Error(ex.getMessage());
     }
 
-    @ExceptionHandler(AuthorAlreadyExistsException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public Error handleAuthorAlreadyExistsException(AuthorAlreadyExistsException ex) {
-        log.error("handleAuthorAlreadyExistsException: exception {}", ex.getMessage(), ex);
-        return new Error(ex.getMessage());
-    }
-
-    @ExceptionHandler(LibraryAlreadyExistsException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public Error handleLibraryAlreadyExistsException(LibraryAlreadyExistsException ex) {
-        log.error("handleLibraryAlreadyExistsException: exception {}", ex.getMessage(), ex);
-        return new Error(ex.getMessage());
-    }
-
     @ExceptionHandler(UserAlreadyExistsException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Error handleUserAlreadyExistsException(UserAlreadyExistsException ex) {
@@ -67,6 +54,27 @@ public class ErrorHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public String handleNullPointerException(NullPointerException ex) {
         return ex.getMessage();
+    }
+
+    @ExceptionHandler(BookNotAvailableException.class)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Error handleBookNotAvailableException(BookNotAvailableException ex) {
+        log.error("handleBookNotAvailableException: exception {}", ex.getMessage(), ex);
+        return new Error(ex.getMessage());
+    }
+
+    @ExceptionHandler(ReservedException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Error handleReservedException(ReservedException ex) {
+        log.error("handleReservedException: exception {}", ex.getMessage(), ex);
+        return new Error(ex.getMessage());
+    }
+
+    @ExceptionHandler(BorrowedException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Error handleBorrowedException(BorrowedException ex) {
+        log.error("handleBorrowedException: exception {}", ex.getMessage(), ex);
+        return new Error(ex.getMessage());
     }
 }
 
