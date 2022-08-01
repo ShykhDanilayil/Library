@@ -4,27 +4,25 @@ import com.library.library.controller.validation.DescriptionValid;
 import lombok.Builder;
 import lombok.Data;
 
-import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
-import javax.validation.constraints.Size;
 
 
 @Data
 @Builder
 public class BookDto {
 
-    @NotBlank
-    public String title;
-
+    @NotEmpty(message = "Book title may not be empty")
+    private String title;
     @DescriptionValid
-    public String description;
-
+    @NotEmpty(message = "Book description may not be empty")
+    private String description;
     @Positive
-    public int pages;
-
+    @NotNull(message = "Book pages may not be null")
+    private int pages;
     @Positive
-    public int publicationYear;
-
-    @Size(min = 1)
-    public Genre genre;
+    private int publicationYear;
+    private Genre genre;
+    private BookStatus status;
 }
