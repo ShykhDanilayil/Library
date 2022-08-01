@@ -1,13 +1,11 @@
 package com.library.library.service.impl;
 
+import com.library.library.controller.dto.Role;
 import com.library.library.controller.dto.UserDto;
 import com.library.library.service.UserService;
-import com.library.library.service.exception.EntityNotFoundException;
 import com.library.library.service.exception.UserAlreadyExistsException;
 import com.library.library.service.mapper.UserMapper;
-import com.library.library.service.model.Library;
 import com.library.library.service.model.User;
-import com.library.library.service.repository.LibraryRepository;
 import com.library.library.service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +25,6 @@ import static java.lang.String.format;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final LibraryRepository libraryRepository;
 
     @Override
     public boolean isEmailAlreadyInUse(String email) {
@@ -58,6 +55,7 @@ public class UserServiceImpl implements UserService {
         }
         User user = UserMapper.INSTANCE.mapUser(userDto);
         user.setPassword(password);
+        user.setRole(Role.USER);
         user.setWrittenOn(Instant.now());
         user = userRepository.save(user);
         log.info("User with email {} successfully created", email);
@@ -77,22 +75,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void addLibrary(String email, String libraryName) {
-        log.info("User with email {} add library with name {}", email, libraryName);
-        User user = getUserByEmail(email);
-        Library library = libraryRepository.getLibraryByLibraryName(libraryName).orElseThrow(() ->
-                new EntityNotFoundException(format("Library with name %s is not found", libraryName)));
-
-        user.getLibraries().add(library);
-        library.getUsers().add(user);
-
-        userRepository.save(user);
-        libraryRepository.save(library);
-        log.info("User with email {} successfully added library with name {}", email, libraryName);
-    }
-
-    @Override
-    @Transactional
     public void deleteUser(String email) {
         log.info("Delete User with email {}", email);
         User user = getUserByEmail(email);
@@ -101,8 +83,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private User getUserByEmail(String email) {
-        return userRepository.findUserByEmail(email).orElseThrow(() ->
-                new EntityNotFoundException(format("User with email %s is not found", email)));
+        return userRepository.findUserByEmail(email);
     }
 
     private UserDto mapUserDto(User user) {

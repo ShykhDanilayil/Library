@@ -16,7 +16,5 @@ public interface UserService {
 
     UserDto updateUser(String email, UserDto userDto);
 
-    void addLibrary(String email, String libraryName);
-
     void deleteUser(String email);
 }
