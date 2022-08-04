@@ -377,47 +377,6 @@ public class LibraryControllerTest {
         verify(libraryService, never()).getAllBooks(libraryDto.getName());
     }
 
-
-//    @Test
-//    void reserveBookTest() throws Exception {
-//        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
-//        when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
-//        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
-//        doNothing().when(libraryService).reserveBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
-//
-//        mockMvc.perform(get("/libraries/reserve")
-//                .param("userEmail", userDto.getEmail())
-//                .param("bookTitle", bookDto.getTitle())
-//                .param("libraryName", libraryDto.getName()));
-////                .andDo(print())
-////                .andExpect(status().isOk());
-////
-////        verify(userService).isEmailAlreadyInUse(userDto.getEmail());
-////        verify(bookService).isExistBookTitle(bookDto.getTitle());
-////        verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
-////        verify(libraryService).reserveBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
-//    }
-
-//    @Test
-//    void borrowBookTest() throws Exception {
-//        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
-//        when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
-//        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
-//        doNothing().when(libraryService).borrowBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
-//
-//        mockMvc.perform(get("/libraries/borrow")
-//                .param("userEmail", userDto.getEmail())
-//                .param("bookTitle", bookDto.getTitle())
-//                .param("libraryName", libraryDto.getName()))
-//                .andDo(print())
-//                .andExpect(status().isOk());
-////
-////        verify(userService).isEmailAlreadyInUse(userDto.getEmail());
-////        verify(bookService).isExistBookTitle(bookDto.getTitle());
-////        verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
-////        verify(libraryService).reserveBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
-//    }
-
     private LibraryDto getLibraryDto() {
         return LibraryDto.builder()
                 .name("TEST")
