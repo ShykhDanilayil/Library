@@ -18,10 +18,10 @@ public class BookDto {
     @DescriptionValid
     @NotEmpty(message = "Book description may not be empty")
     private String description;
-    @Positive
+    @Positive(message = "Book pages must be than 0")
     @NotNull(message = "Book pages may not be null")
     private int pages;
-    @Positive
+    @Positive(message = "Publication year must be than 0")
     private int publicationYear;
     private Genre genre;
     private BookStatus status;

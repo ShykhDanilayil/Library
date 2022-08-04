@@ -34,6 +34,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import static java.lang.String.format;
@@ -113,7 +114,7 @@ public class LibraryServiceImpl implements LibraryService {
         log.info("Search for available books by title {} in all libraries", bookTitle);
         for (Book book :
                 books) {
-            if (!book.getStatus().equals(BookStatus.AVAILABLE)) {
+            if (book.getStatus().equals(BookStatus.AVAILABLE) && Objects.nonNull(book.getLibrary())) {
                 libraries.add(book.getLibrary());
             }
         }

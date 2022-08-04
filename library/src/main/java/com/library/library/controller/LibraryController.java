@@ -103,14 +103,15 @@ public class LibraryController {
     @ApiOperation("Reserved book")
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/reserve")
-    public void reserveBook(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName) {
+    public void reserveBook(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam String libraryName) {
         libraryService.reserveBook(bookTitle, userEmail, libraryName);
     }
 
     @ApiOperation("Borrow book")
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/borrow")
-    public void borrowBook(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName) {
+    public void borrowBook(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam String libraryName) {
+//    public void borrowBook(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName) {
         libraryService.borrowBook(bookTitle, userEmail, libraryName);
     }
 

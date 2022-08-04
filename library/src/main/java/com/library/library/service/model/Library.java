@@ -11,6 +11,7 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -33,5 +34,5 @@ public class Library {
     @ManyToMany(mappedBy = "libraries")
     private List<User> users = new ArrayList<>();
     @OneToMany(mappedBy = "library")
-    private Set<Book> books;
+    private Set<Book> books = new HashSet<>();
 }

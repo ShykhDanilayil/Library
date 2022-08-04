@@ -25,11 +25,18 @@ import static java.lang.String.format;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+//    private final PasswordEncoder passwordEncoder;
 
     @Override
     public boolean isEmailAlreadyInUse(String email) {
         log.info("Checking email {}", email);
         return userRepository.existsUserByEmail(email);
+    }
+
+    @Override
+    public boolean isNameAlreadyInUse(String name) {
+        log.info("Checking user name {}", name);
+        return userRepository.existsUserByUserName(name);
     }
 
     @Override
@@ -47,14 +54,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserDto createUser(UserDto userDto, String password) {
+    public UserDto createUser(UserDto userDto) {
         String email = userDto.getEmail();
         log.info("Create User with email {}", email);
         if (userRepository.existsUserByEmail(email)) {
             throw new UserAlreadyExistsException(format("User with email %s exists", email));
         }
         User user = UserMapper.INSTANCE.mapUser(userDto);
-        user.setPassword(password);
+//        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
         user.setRole(Role.USER);
         user.setWrittenOn(Instant.now());
         user = userRepository.save(user);
@@ -88,8 +95,7 @@ public class UserServiceImpl implements UserService {
 
     private UserDto mapUserDto(User user) {
         return UserDto.builder()
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
+                .userName(user.getUserName())
                 .email(user.getEmail())
                 .role(user.getRole())
                 .phone(user.getPhone())
@@ -102,15 +108,15 @@ public class UserServiceImpl implements UserService {
     }
 
     private void populateUserWithPresentUserDtoFields(User user, UserDto userDto) {
-        if (Objects.nonNull(userDto.getFirstName())) {
-            user.setFirstName(userDto.getFirstName());
-        }
-        if (Objects.nonNull(userDto.getLastName())) {
-            user.setLastName(userDto.getLastName());
+        if (Objects.nonNull(userDto.getUserName())) {
+            user.setUserName(userDto.getUserName());
         }
         if (Objects.nonNull(userDto.getEmail())) {
             user.setEmail(userDto.getEmail());
         }
+//        if (Objects.nonNull(userDto.getPassword())) {
+//            user.setPassword(userDto.getEmail());
+//        }
         if (Objects.nonNull(userDto.getRole())) {
             user.setRole(userDto.getRole());
         }

@@ -75,6 +75,15 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.boot</groupId>-->
+<!--            <artifactId>spring-boot-starter-security</artifactId>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.security</groupId>-->
+<!--            <artifactId>spring-security-test</artifactId>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
     </dependencies>
 
     <build>
@@ -133,7 +142,6 @@
                         <exclude>com/library/library/service/model/**/*</exclude>
                         <exclude>com/library/library/service/mapper/**/*</exclude>
                         <exclude>com/library/library/controller/dto/**/*</exclude>
-                        <exclude>com/library/library/controller/validation/**/*</exclude>
                     </excludes>
                 </configuration>
                 <executions>

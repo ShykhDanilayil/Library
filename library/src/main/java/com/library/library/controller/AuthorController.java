@@ -53,6 +53,7 @@ public class AuthorController {
 
     @Validated
     @ApiOperation("Get all books by author")
+    @ResponseStatus(HttpStatus.OK)
     @GetMapping(value = "/{nickname}/books")
     public Set<BookDto> getBooksAuthor(@PathVariable @IsNickName String nickname) {
         return authorService.getAuthorBooks(nickname);
