@@ -5,20 +5,27 @@ import com.library.library.config.TestWebConfig;
 import com.library.library.controller.dto.AuthorDto;
 import com.library.library.controller.dto.BookDto;
 import com.library.library.service.AuthorService;
-import com.library.library.service.exception.AuthorAlreadyExistsException;
-import com.library.library.service.exception.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
-import static java.lang.String.format;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.only;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -45,80 +52,101 @@ public class AuthorControllerTest {
     private final BookDto bookDto = getBookDto();
 
     @Test
-    void getAuthorByIdTest() throws Exception {
-        when(authorService.getAuthorInfo(authorDto.getId())).thenReturn(authorDto);
-
-        mockMvc.perform(get("/author/" + authorDto.getId()))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(authorDto.getId()))
-                .andExpect(jsonPath("$.name").value(authorDto.getName()))
-                .andExpect(jsonPath("$.nickname").value(authorDto.getNickname()));
-    }
-
-    @Test
-    void getAuthor_expectException_onError_EntityNotFoundException() throws Exception {
-        String message = format("Author with id %s is not found", authorDto.getId());
-        when(authorService.getAuthorInfo(authorDto.getId())).thenThrow(new EntityNotFoundException(message));
-
-        mockMvc.perform(get("/author/" + authorDto.getId()))
-                .andDo(print())
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value(message));
-    }
-
-    @Test
     void createAuthorTest() throws Exception {
-        AuthorDto authorDtoWithIdNull = authorDto;
-        authorDtoWithIdNull.setId(null);
+        when(authorService.isNicknameAlreadyInUse(authorDto.getNickname())).thenReturn(false);
+        when(authorService.createAuthor(authorDto)).thenReturn(authorDto);
 
-        when(authorService.createAuthor(authorDtoWithIdNull)).thenReturn(authorDto);
-
-        mockMvc.perform(post("/author")
+        mockMvc.perform(post("/authors")
                 .content(objectMapper.writeValueAsString(authorDto))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(authorDto.getId()))
                 .andExpect(jsonPath("$.name").value(authorDto.getName()))
                 .andExpect(jsonPath("$.nickname").value(authorDto.getNickname()));
     }
 
     @Test
-    void createAuthor_expectException_onError_AuthorAlreadyExistsException() throws Exception {
-        String message = format("Author with name %s  and nickname %s exists", authorDto.getId(), authorDto.getNickname());
+    void createAuthorTest2() throws Exception {
+        String message = "There is already author with this nickname!";
+        when(authorService.isNicknameAlreadyInUse(authorDto.getNickname())).thenReturn(true);
 
-        AuthorDto authorDtoWithIdNull = authorDto;
-        authorDtoWithIdNull.setId(null);
-
-        when(authorService.createAuthor(authorDtoWithIdNull)).thenThrow(new AuthorAlreadyExistsException(message));
-
-        mockMvc.perform(post("/author")
+        mockMvc.perform(post("/authors")
                 .content(objectMapper.writeValueAsString(authorDto))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value(message));
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].message").value(message));
+        ;
+
+        verify(authorService, only()).isNicknameAlreadyInUse(authorDto.getNickname());
+        verify(authorService, never()).createAuthor(any());
     }
 
     @Test
-    void getAuthorBooksTest() throws Exception {
-        when(authorService.getAuthorBooks(authorDto.getId())).thenReturn(Collections.singleton(bookDto));
+    void createAuthorTestWithNullName() throws Exception {
+        String message = "must not be blank";
+        authorDto.setName(null);
+        when(authorService.createAuthor(authorDto)).thenReturn(authorDto);
 
-        mockMvc.perform(get("/author/" + authorDto.getId() + "/book"))
+        mockMvc.perform(post("/authors")
+                .content(objectMapper.writeValueAsString(authorDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$[0].message").value(message));
+    }
+
+    @Test
+    void getAllAuthorsTest() throws Exception {
+        Pageable pageable = PageRequest.of(1, 8);
+        List<AuthorDto> authorDtos = new ArrayList<>();
+        authorDtos.add(authorDto);
+        Page<AuthorDto> authorDtoPage = new PageImpl<>(authorDtos, pageable, authorDtos.size());
+        when(authorService.getAllAuthors(pageable)).thenReturn(authorDtoPage);
+
+        mockMvc.perform(get("/authors?page=" + pageable.getPageNumber() + "&size=" + pageable.getPageSize())
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$['pageable']['paged']").value("true"))
+                .andExpect(jsonPath("$['content'][0].nickname").value(authorDto.getNickname()));
+    }
+
+    @Test
+    void getBooksAuthorTest() throws Exception {
+        when(authorService.isNicknameAlreadyInUse(authorDto.getNickname())).thenReturn(true);
+        when(authorService.getAuthorBooks(authorDto.getNickname())).thenReturn(Collections.singleton(bookDto));
+
+        mockMvc.perform(get("/authors/" + authorDto.getNickname() + "/books"))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$[0].title").value(bookDto.getTitle()))
                 .andExpect(jsonPath("$[0].description").value(bookDto.getDescription()))
-                .andExpect(jsonPath("$[0].pages").value(bookDto.getPages()));
+                .andExpect(jsonPath("$[0].pages").value(bookDto.getPages()))
+                .andExpect(jsonPath("$[0].status").value(bookDto.getStatus()));
+    }
+
+    @Test
+    void getBooksAuthorTest2() throws Exception {
+        String message = "getBooksAuthor.nickname: This nickname doesn't exists!";
+        when(authorService.isNicknameAlreadyInUse(authorDto.getNickname())).thenReturn(false);
+
+        mockMvc.perform(get("/authors/" + authorDto.getNickname() + "/books"))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message").value(message));
+        ;
+
+        verify(authorService, only()).isNicknameAlreadyInUse(authorDto.getNickname());
+        verify(authorService, never()).getAuthorBooks(any());
     }
 
     private AuthorDto getAuthorDto() {
         return AuthorDto.builder()
-                .id(456L)
                 .name("Test")
                 .nickname("TEST NICKNANE")
                 .build();
