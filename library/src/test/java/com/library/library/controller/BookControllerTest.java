@@ -70,7 +70,7 @@ public class BookControllerTest {
     }
 
     @Test
-    void getBookTest2() throws Exception {
+    void getBookTitleExceptionTest() throws Exception {
         String message = "getBook.bookTitle: This book title doesn't exists!";
         when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(false);
 
@@ -120,7 +120,7 @@ public class BookControllerTest {
     }
 
     @Test
-    void createBookTest2() throws Exception {
+    void createBookNickNameExceptionTest() throws Exception {
         String message = "createBook.nickname: This nickname doesn't exists!";
         when(authorService.isNicknameAlreadyInUse(authorDto.getNickname())).thenReturn(false);
 
@@ -137,7 +137,7 @@ public class BookControllerTest {
     }
 
     @Test
-    void createBookTest3() throws Exception {
+    void createBookDescriptionExceptionTest() throws Exception {
         bookDto.setDescription("test");
         String messageDescription = "Invalid book description. Description must be 4 words";
 
@@ -168,7 +168,7 @@ public class BookControllerTest {
     }
 
     @Test
-    void getAuthorByBookTest2() throws Exception {
+    void getAuthorByBookTitleExceptionTest() throws Exception {
         String message = "getAuthorByBook.bookTitle: This book title doesn't exists!";
         when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(false);
 

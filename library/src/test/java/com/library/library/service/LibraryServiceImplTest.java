@@ -112,8 +112,7 @@ public class LibraryServiceImplTest {
     void getPageLibrariesTest() {
         Pageable pageable = PageRequest.of(0, 12);
 
-        List<Library> libraries = new ArrayList<>();
-        libraries.add(library);
+        List<Library> libraries = Collections.singletonList(library);
         Page<Library> libraryPage = new PageImpl<>(libraries, pageable, libraries.size());
         //given
         when(libraryRepository.findAll(pageable)).thenReturn(libraryPage);
@@ -122,8 +121,7 @@ public class LibraryServiceImplTest {
         Page<LibraryDto> actualPage = libraryService.getPageLibraries(pageable);
 
         //then
-        List<LibraryDto> libraryDtos = new ArrayList<>();
-        libraryDtos.add(libraryDto);
+        List<LibraryDto> libraryDtos = Collections.singletonList(libraryDto);
         Page<LibraryDto> libraryDtoPage = new PageImpl<>(libraryDtos, pageable, libraryDtos.size());
         assertEquals(libraryDtoPage, actualPage);
     }
@@ -172,7 +170,7 @@ public class LibraryServiceImplTest {
 
     @Test
     void getAllLibrariesByBookTitleTest() {
-        book.setLibrary(getLibrary());
+        book.setLibrary(library);
         //given
         when(bookRepository.findBookByTitleAndLibraryNotNull(bookDto.getTitle())).thenReturn(Collections.singletonList(book));
 
@@ -186,7 +184,7 @@ public class LibraryServiceImplTest {
     }
 
     @Test
-    void getAllLibrariesByBookTitleTest2() {
+    void getAllLibrariesByBookTitleEntityNotFoundExceptionTest() {
         //given
         book.setLibrary(null);
         when(bookRepository.findBookByTitleAndLibraryNotNull(bookDto.getTitle())).thenReturn(Collections.singletonList(book));
@@ -198,7 +196,7 @@ public class LibraryServiceImplTest {
     }
 
     @Test
-    void getAllLibrariesByBookTitleTest3() {
+    void getAllLibrariesByBookTitleEmptyListTest() {
         //given
         book.setLibrary(null);
         when(bookRepository.findBookByTitleAndLibraryNotNull(bookDto.getTitle())).thenReturn(Collections.emptyList());
@@ -207,6 +205,20 @@ public class LibraryServiceImplTest {
                 () -> libraryService.getAllLibrariesByBookTitle(book.getTitle()));
         //then
         verify(bookRepository, only()).findBookByTitleAndLibraryNotNull(bookDto.getTitle());
+    }
+
+    @Test
+    void getAllLibrariesByBookTitleReservedTest() {
+        //given
+        book.setLibrary(library);
+        book.setStatus(BookStatus.RESERVED);
+        when(bookRepository.findBookByTitleAndLibraryNotNull(bookDto.getTitle())).thenReturn(Collections.singletonList(book));
+        //when
+        assertThrows(EntityNotFoundException.class,
+                () -> libraryService.getAllLibrariesByBookTitle(book.getTitle()));
+        //then
+        verify(bookRepository, only()).findBookByTitleAndLibraryNotNull(bookDto.getTitle());
+        book.setStatus(BookStatus.AVAILABLE);
     }
 
     @Test
@@ -254,7 +266,7 @@ public class LibraryServiceImplTest {
 
     @Test
     void reserveBookTest() {
-        library.getBooks().add(book);
+        library.setBooks(Collections.singleton(book));
         //given
         when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
         when(borrowedRepository.existsBorrowedByUser(user)).thenReturn(false);
@@ -272,7 +284,9 @@ public class LibraryServiceImplTest {
     }
 
     @Test
-    void reserveBookTest2() {
+    void reserveBookNotAvailableExceptionTest() {
+        book.setStatus(BookStatus.RESERVED);
+        library.setBooks(Collections.singleton(book));
         //given
         when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
         when(borrowedRepository.existsBorrowedByUser(user)).thenReturn(false);
@@ -290,7 +304,7 @@ public class LibraryServiceImplTest {
     }
 
     @Test
-    void reserveBookTest3() {
+    void reserveBookExceptionTest() {
         //given
         when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
         when(borrowedRepository.existsBorrowedByUser(user)).thenReturn(true);
@@ -304,6 +318,27 @@ public class LibraryServiceImplTest {
         verify(borrowedRepository, times(1)).existsBorrowedByUser(user);
         verify(libraryRepository, never()).findLibraryByLibraryName(any());
         verify(reservedRepository, never()).save(any());
+    }
+
+    @Test
+    void reserveBookNotEqualsTitleTest34() {
+        Book newBook = book;
+        newBook.setTitle("new Title");
+        library.setBooks(Collections.singleton(newBook));
+        //given
+        when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
+        when(borrowedRepository.existsBorrowedByUser(user)).thenReturn(false);
+        when(libraryRepository.findLibraryByLibraryName(libraryDto.getName())).thenReturn(library);
+
+        //when
+        assertThrows(BookNotAvailableException.class,
+                () -> libraryService.reserveBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName()));
+
+        //then
+        verify(userRepository).findUserByEmail(userDto.getEmail());
+        verify(borrowedRepository).existsBorrowedByUser(user);
+        verify(libraryRepository).findLibraryByLibraryName(libraryDto.getName());
+        verify(reservedRepository, never()).save(isA(Reserved.class));
     }
 
     @Test
@@ -327,7 +362,7 @@ public class LibraryServiceImplTest {
     }
 
     @Test
-    void borrowBookTest2() {
+    void borrowBookReservedExceptionTest() {
         //given
         when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
         when(libraryRepository.findLibraryByLibraryName(libraryDto.getName())).thenReturn(library);
@@ -365,7 +400,7 @@ public class LibraryServiceImplTest {
     }
 
     @Test
-    void returnBookTest2() {
+    void returnBookPenaltyTest() {
         Borrowed borrowed = getBorrowed();
         borrowed.setDueDate(Calendar.getInstance().getTime());
         //given
@@ -387,7 +422,7 @@ public class LibraryServiceImplTest {
     }
 
     @Test
-    void returnBookTest3() {
+    void returnBookBorrowedExceptionTest() {
         //given
         when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
         when(libraryRepository.findLibraryByLibraryName(libraryDto.getName())).thenReturn(library);
@@ -432,7 +467,8 @@ public class LibraryServiceImplTest {
 
     private UserDto getUserDto() {
         return UserDto.builder()
-                .userName("Petro Smikh")
+                .firstName("Petro")
+                .lastName("Smikh")
                 .email("string@test.com")
                 .role(Role.USER)
                 .postalCode("12345")

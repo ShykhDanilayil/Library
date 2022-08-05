@@ -67,7 +67,7 @@ public class AuthorControllerTest {
     }
 
     @Test
-    void createAuthorTest2() throws Exception {
+    void createAuthorNicknameException() throws Exception {
         String message = "There is already author with this nickname!";
         when(authorService.isNicknameAlreadyInUse(authorDto.getNickname())).thenReturn(true);
 
@@ -78,7 +78,6 @@ public class AuthorControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$[0].message").value(message));
-        ;
 
         verify(authorService, only()).isNicknameAlreadyInUse(authorDto.getNickname());
         verify(authorService, never()).createAuthor(any());
@@ -130,7 +129,7 @@ public class AuthorControllerTest {
     }
 
     @Test
-    void getBooksAuthorTest2() throws Exception {
+    void getBooksAuthorNickNameExceptionTest() throws Exception {
         String message = "getBooksAuthor.nickname: This nickname doesn't exists!";
         when(authorService.isNicknameAlreadyInUse(authorDto.getNickname())).thenReturn(false);
 
@@ -139,7 +138,6 @@ public class AuthorControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.message").value(message));
-        ;
 
         verify(authorService, only()).isNicknameAlreadyInUse(authorDto.getNickname());
         verify(authorService, never()).getAuthorBooks(any());

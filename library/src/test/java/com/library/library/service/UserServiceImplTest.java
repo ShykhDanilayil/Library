@@ -1,13 +1,11 @@
 package com.library.library.service;
 
+import com.library.library.controller.dto.Role;
 import com.library.library.controller.dto.UserDto;
-import com.library.library.service.exception.EntityNotFoundException;
 import com.library.library.service.exception.UserAlreadyExistsException;
 import com.library.library.service.impl.UserServiceImpl;
 import com.library.library.service.mapper.UserMapper;
-import com.library.library.service.model.Library;
 import com.library.library.service.model.User;
-import com.library.library.service.repository.LibraryRepository;
 import com.library.library.service.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,21 +13,23 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
-import java.util.ArrayList;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+import java.util.Locale;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.only;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -41,236 +41,185 @@ public class UserServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
-    @Mock
-    private LibraryRepository libraryRepository;
 
     private final User user = getUser();
     private final UserDto userDto = getUserDto();
-    private final Library library = getLibrary();
-    private final String MOCK_EMAIL = "EMAIL";
+
+    public UserServiceImplTest() throws ParseException {
+    }
 
     @Test
-    void getUserByEmailTest() {
+    void isEmailAlreadyInUseTest() {
+        when(userRepository.existsUserByEmail(userDto.getEmail())).thenReturn(true);
+        assertTrue(userService.isEmailAlreadyInUse(userDto.getEmail()));
+    }
+
+    @Test
+    void getUserTest() {
         //given
-        when(userRepository.findUserByEmail(MOCK_EMAIL)).thenReturn(Optional.of(user));
+        when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(UserMapper.INSTANCE.mapUser(userDto));
 
         //when
-        UserDto expectedUserDTO = UserMapper.INSTANCE.mapUserDto(user);
-        UserDto actualUserDto = userService.getUser(MOCK_EMAIL);
+        UserDto actualUserDto = userService.getUser(userDto.getEmail());
 
         //then
-        assertEquals(expectedUserDTO, actualUserDto);
+        assertEquals(userDto, actualUserDto);
     }
 
-    @Test
-    void getUserByEmailWithExceptionTest() {
-        when(userRepository.findUserByEmail(MOCK_EMAIL)).thenReturn(Optional.empty());
-        assertThrows(EntityNotFoundException.class,
-                () -> userService.getUser(MOCK_EMAIL));
-        verify(userRepository,only()).findUserByEmail(MOCK_EMAIL);
-    }
 
     @Test
-    public void listUsersTest() {
+    public void pageUsersTest() {
+        Pageable pageable = PageRequest.of(0, 12);
+
+        List<User> users = Collections.singletonList(user);
+        Page<User> userPage = new PageImpl<>(users, pageable, users.size());
         //given
-        when(userRepository.findAll(any(PageRequest.class))).thenReturn(Page.empty());
+        when(userRepository.findAll(pageable)).thenReturn(userPage);
 
         //when
-        List<UserDto> users = userService.listUsers();
+        Page<UserDto> actualPage = userService.pageUsers(pageable);
 
         //then
-        assertThat(users, hasSize(0));
+        List<UserDto> userDtos = Collections.singletonList(userDto);
+        Page<UserDto> expectedPage = new PageImpl<>(userDtos, pageable, userDtos.size());
+        assertEquals(expectedPage, actualPage);
     }
 
-    @Test
+    @Test()
     public void createUserTest() {
-        String password = "password";
-        UserDto expected = UserMapper.INSTANCE.mapUserDto(user);
         //given
-        when(userRepository.existsUserByEmail(MOCK_EMAIL)).thenReturn(false);
-        when(userRepository.save(any())).thenReturn(user);
+        when(userRepository.existsUserByEmail(userDto.getEmail())).thenReturn(false);
+        when(userRepository.save(isA(User.class))).thenReturn(user);
 
         //when
-        UserDto actual = userService.createUser(userDto, password);
+        UserDto actual = userService.createUser(userDto);
 
         //then
-        assertEquals(expected, actual);
-        verify(userRepository, times(1)).save(any(User.class));
+        assertEquals(userDto, actual);
     }
 
     @Test
-    public void createUserWithExceptionTest() {
-        String password = "password";
-        UserDto expected = UserMapper.INSTANCE.mapUserDto(user);
+    public void createUserAlreadyExistsExceptionTest() {
         //given
-        when(userRepository.existsUserByEmail(MOCK_EMAIL)).thenReturn(true);
+        when(userRepository.existsUserByEmail(userDto.getEmail())).thenReturn(true);
+
+        //when
+        assertThrows(UserAlreadyExistsException.class,
+                () -> userService.createUser(userDto));
 
         //then
-        assertThrows(UserAlreadyExistsException.class,
-                () -> userService.createUser(userDto, password));
-        verify(userRepository, never()).save(any(User.class));
+        verify(userRepository, only()).existsUserByEmail(userDto.getEmail());
+        verify(userRepository, never()).save(isA(User.class));
     }
 
     @Test
     public void updateUserTest() {
         //given
-        when(userRepository.findUserByEmail(MOCK_EMAIL)).thenReturn(Optional.of(user));
+        when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
+        when(userRepository.save(isA(User.class))).thenReturn(user);
 
         //when
-        UserDto actual = userService.updateUser(MOCK_EMAIL, userDto);
+        UserDto actual = userService.updateUser(userDto.getEmail(), userDto);
 
         //then
         assertEquals(userDto, actual);
-        verify(userRepository, times(1)).save(user);
+        verify(userRepository).findUserByEmail(user.getEmail());
+        verify(userRepository).save(user);
     }
 
     @Test
-    public void updateUserTestUpdateOnlyFirstName() {
+    public void updateUserFirstNameAndLastNameAndEmailAndPasswordNullTest() {
+        UserDto updateUserDto = userDto;
+        updateUserDto.setFirstName(null);
+        updateUserDto.setLastName(null);
+        updateUserDto.setEmail(null);
+        updateUserDto.setPassword(null);
+        User updateUser = UserMapper.INSTANCE.mapUser(updateUserDto);
         //given
-        when(userRepository.findUserByEmail(MOCK_EMAIL)).thenReturn(Optional.of(user));
+        when(userRepository.findUserByEmail(user.getEmail())).thenReturn(updateUser);
+        when(userRepository.save(isA(User.class))).thenReturn(updateUser);
 
         //when
-        String lastName = userDto.getLastName();
-        userDto.setEmail(null);
-        userDto.setLastName(null);
-        UserDto actual = userService.updateUser(MOCK_EMAIL, userDto);
+        UserDto actual = userService.updateUser(user.getEmail(), updateUserDto);
 
         //then
-        User expected = User.builder()
-                .email(user.getEmail())
-                .firstName(userDto.getFirstName())
-                .lastName(user.getLastName())
-                .build();
-//        userDto.setFirstName(user.getFirstName());
-        assertEquals(UserMapper.INSTANCE.mapUserDto(expected), actual);
-        verify(userRepository, times(1)).save(user);
-        userDto.setEmail(MOCK_EMAIL);
-        userDto.setLastName(lastName);
+        assertEquals(updateUserDto, actual);
+        verify(userRepository).findUserByEmail(user.getEmail());
+        verify(userRepository).save(updateUser);
     }
 
     @Test
-    public void updateUserTestUpdateLastNameAndEmail() {
+    public void updateUserRoleAndPhoneAndBirthdayAndCountryNullTest() {
+        UserDto updateUserDto = userDto;
+        updateUserDto.setRole(null);
+        updateUserDto.setPhone(null);
+        updateUserDto.setBirthday(null);
+        updateUserDto.setCountry(null);
+        User updateUser = UserMapper.INSTANCE.mapUser(updateUserDto);
         //given
-        when(userRepository.findUserByEmail(MOCK_EMAIL)).thenReturn(Optional.of(user));
+        when(userRepository.findUserByEmail(user.getEmail())).thenReturn(updateUser);
+        when(userRepository.save(isA(User.class))).thenReturn(updateUser);
 
         //when
-        String firstName = userDto.getFirstName();
-        userDto.setFirstName(null);
-        UserDto actual = userService.updateUser(MOCK_EMAIL, userDto);
+        UserDto actual = userService.updateUser(user.getEmail(), updateUserDto);
 
         //then
-        User expected = User.builder()
-                .email(user.getEmail())
-                .firstName(user.getFirstName())
-                .lastName(userDto.getLastName())
-                .build();
-        assertEquals(UserMapper.INSTANCE.mapUserDto(expected), actual);
-        verify(userRepository, times(1)).save(user);
-        userDto.setFirstName(firstName);
+        assertEquals(updateUserDto, actual);
+        verify(userRepository).findUserByEmail(user.getEmail());
+        verify(userRepository).save(updateUser);
     }
 
     @Test
-    public void updateUserWithExceptionTest() {
+    public void updateUserCityAndAddressAndPostalCodeNullTest() {
+        UserDto updateUserDto = userDto;
+        updateUserDto.setCity(null);
+        updateUserDto.setAddress(null);
+        updateUserDto.setPostalCode(null);
+        User updateUser = UserMapper.INSTANCE.mapUser(updateUserDto);
         //given
-        when(userRepository.findUserByEmail(MOCK_EMAIL)).thenReturn(Optional.empty());
-
-        //then
-        assertThrows(EntityNotFoundException.class,
-                () -> userService.updateUser(MOCK_EMAIL, userDto));
-        verify(userRepository, never()).save(user);
-    }
-
-    @Test
-    public void addLibraryTest() {
-        //given
-        when(userRepository.findUserByEmail(MOCK_EMAIL)).thenReturn(Optional.of(user));
-        when(libraryRepository.getLibraryByLibraryName(library.getLibraryName())).thenReturn(Optional.of(library));
+        when(userRepository.findUserByEmail(user.getEmail())).thenReturn(updateUser);
+        when(userRepository.save(isA(User.class))).thenReturn(updateUser);
 
         //when
-        userService.addLibrary(MOCK_EMAIL, library.getLibraryName());
+        UserDto actual = userService.updateUser(user.getEmail(), updateUserDto);
 
         //then
-        verify(userRepository, times(1)).findUserByEmail(MOCK_EMAIL);
-        verify(libraryRepository, times(1)).getLibraryByLibraryName(library.getLibraryName());
-        verify(userRepository, times(1)).save(user);
-        verify(libraryRepository, times(1)).save(library);
-    }
-
-    @Test
-    public void addLibraryWithExceptionUserTest() {
-        //given
-        when(userRepository.findUserByEmail(MOCK_EMAIL)).thenReturn(Optional.empty());
-
-        //when
-        assertThrows(EntityNotFoundException.class,
-                () -> userService.addLibrary(MOCK_EMAIL, library.getLibraryName()));
-
-        //then
-        verify(userRepository, only()).findUserByEmail(MOCK_EMAIL);
-        verify(libraryRepository, never()).getLibraryByLibraryName(library.getLibraryName());
-        verify(userRepository, never()).save(user);
-        verify(libraryRepository, never()).save(library);
-    }
-
-    @Test
-    public void addLibraryWithExceptionLibraryTest2() {
-        //given
-        when(userRepository.findUserByEmail(MOCK_EMAIL)).thenReturn(Optional.of(user));
-        when(libraryRepository.getLibraryByLibraryName(library.getLibraryName())).thenReturn(Optional.empty());
-
-        //when
-        assertThrows(EntityNotFoundException.class,
-                () -> userService.addLibrary(MOCK_EMAIL, library.getLibraryName()));
-
-        //then
-        verify(userRepository, only()).findUserByEmail(MOCK_EMAIL);
-        verify(libraryRepository, only()).getLibraryByLibraryName(library.getLibraryName());
-        verify(userRepository, never()).save(user);
-        verify(libraryRepository, never()).save(library);
+        assertEquals(updateUserDto, actual);
+        verify(userRepository).findUserByEmail(user.getEmail());
+        verify(userRepository).save(updateUser);
     }
 
     @Test
     void deleteUserTest() {
         //given
-        when(userRepository.findUserByEmail(MOCK_EMAIL)).thenReturn(Optional.of(user));
+        when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
         doNothing().when(userRepository).delete(user);
 
         //when
-        userService.deleteUser(MOCK_EMAIL);
+        userService.deleteUser(userDto.getEmail());
 
         //then
-        verify(userRepository, times(1)).delete(user);
+        verify(userRepository).findUserByEmail(userDto.getEmail());
+        verify(userRepository).delete(user);
     }
 
-    @Test
-    void deleteUserWithExceptionTest() {
-        when(userRepository.findUserByEmail(MOCK_EMAIL)).thenReturn(Optional.empty());
-        //then
-        assertThrows(EntityNotFoundException.class,
-                () -> userService.deleteUser(MOCK_EMAIL));
-        verify(userRepository, never()).delete(user);
+    private User getUser() throws ParseException {
+        return UserMapper.INSTANCE.mapUser(getUserDto());
     }
 
-    private User getUser() {
-        return User.builder()
-                .email(MOCK_EMAIL)
-                .firstName("TEST")
-                .libraries(new ArrayList<>())
-                .build();
-    }
-
-    private UserDto getUserDto() {
+    private UserDto getUserDto() throws ParseException {
         return UserDto.builder()
-                .firstName("TEST")
-                .lastName("TEST LASTNAME")
-                .email(MOCK_EMAIL)
+                .firstName("test name")
+                .lastName("last name")
+                .email("test@email.com")
+                .password("12345q")
+                .role(Role.USER)
+                .phone("0986555423")
+                .birthday(new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH).parse("7-Jun-1987"))
+                .country("English")
+                .city("London")
+                .address("St. She 2")
+                .postalCode("12345")
                 .build();
-    }
-
-    private Library getLibrary() {
-        Library lib = new Library();
-        lib.setLibraryName("TEST LIB");
-        lib.setAddress("LVIV");
-        return lib;
     }
 }

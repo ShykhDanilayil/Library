@@ -26,7 +26,6 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -91,13 +90,6 @@ public class AuthorServiceImplTest {
     }
 
     @Test
-    void getAuthorBooksWithExceptionTest() {
-        when(authorRepository.findAuthorByNickname(author.getNickname())).thenReturn(null);
-        assertThrows(NullPointerException.class,
-                () -> libraryService.getAuthorBooks(author.getNickname()));
-    }
-
-    @Test
     void isNicknameAlreadyInUseTest() {
         //given
         when(authorRepository.existsAuthorByNickname(author.getNickname())).thenReturn(true);
@@ -110,7 +102,7 @@ public class AuthorServiceImplTest {
     }
 
     @Test
-    void isNicknameAlreadyInUseTest2() {
+    void isNicknameAlreadyInUseFalseTest() {
         //given
         when(authorRepository.existsAuthorByNickname(author.getNickname())).thenReturn(false);
 
