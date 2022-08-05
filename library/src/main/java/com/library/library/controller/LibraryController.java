@@ -121,5 +121,4 @@ public class LibraryController {
     public void returnBook(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName) {
         libraryService.returnBook(bookTitle, userEmail, libraryName);
     }
-
 }
