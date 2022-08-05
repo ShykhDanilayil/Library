@@ -34,12 +34,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public boolean isNameAlreadyInUse(String name) {
-        log.info("Checking user name {}", name);
-        return userRepository.existsUserByUserName(name);
-    }
-
-    @Override
     public UserDto getUser(String email) {
         log.info("Search User by email {}", email);
         User user = getUserByEmail(email);
@@ -64,7 +58,7 @@ public class UserServiceImpl implements UserService {
 //        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
         user.setRole(Role.USER);
         user.setWrittenOn(Instant.now());
-        user = userRepository.save(user);
+        userRepository.save(user);
         log.info("User with email {} successfully created", email);
         return UserMapper.INSTANCE.mapUserDto(user);
     }
@@ -95,8 +89,10 @@ public class UserServiceImpl implements UserService {
 
     private UserDto mapUserDto(User user) {
         return UserDto.builder()
-                .userName(user.getUserName())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
                 .email(user.getEmail())
+                .password(user.getPassword())
                 .role(user.getRole())
                 .phone(user.getPhone())
                 .birthday(user.getBirthday())
@@ -108,15 +104,18 @@ public class UserServiceImpl implements UserService {
     }
 
     private void populateUserWithPresentUserDtoFields(User user, UserDto userDto) {
-        if (Objects.nonNull(userDto.getUserName())) {
-            user.setUserName(userDto.getUserName());
+        if (Objects.nonNull(userDto.getFirstName())) {
+            user.setFirstName(userDto.getFirstName());
+        }
+        if (Objects.nonNull(userDto.getLastName())) {
+            user.setLastName(userDto.getLastName());
         }
         if (Objects.nonNull(userDto.getEmail())) {
             user.setEmail(userDto.getEmail());
         }
-//        if (Objects.nonNull(userDto.getPassword())) {
-//            user.setPassword(userDto.getEmail());
-//        }
+        if (Objects.nonNull(userDto.getPassword())) {
+            user.setPassword(userDto.getPassword());
+        }
         if (Objects.nonNull(userDto.getRole())) {
             user.setRole(userDto.getRole());
         }

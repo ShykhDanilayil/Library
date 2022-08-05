@@ -12,7 +12,7 @@ public interface UserService {
 
     Page<UserDto> pageUsers(Pageable pageable);
 
-    UserDto createUser(UserDto userDto, String password);
+    UserDto createUser(UserDto userDto);
 
     UserDto updateUser(String email, UserDto userDto);
 

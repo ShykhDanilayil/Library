@@ -29,7 +29,7 @@ import javax.validation.Valid;
 
 @Validated
 @RestController
-@RequestMapping("/users")
+@RequestMapping
 @RequiredArgsConstructor
 @Api(tags = "API description for SWAGGER documentation")
 @ApiResponses({
@@ -41,30 +41,30 @@ public class UserController {
     private final UserService userService;
 
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping
+    @GetMapping("/users")
     public Page<UserDto> getAllUsers(Pageable pageable) {
         return userService.pageUsers(pageable);
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping(value = "/{email}")
+    @GetMapping(value = "/users/{email}")
     public UserDto getUser(@PathVariable @EmailValid @IsEmailUser String email) {
         return userService.getUser(email);
     }
 
     @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping
-    public UserDto createUser(@RequestBody @Valid UserDto userDto, @PasswordValid @RequestParam String password) {
-        return userService.createUser(userDto, password);
+    @PostMapping(value = "/registration")
+    public UserDto createUser(@RequestBody @Valid UserDto userDto) {
+        return userService.createUser(userDto);
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @PutMapping(value = "/{email}")
+    @PutMapping(value = "/users/{email}")
     public UserDto updateUser(@PathVariable @EmailValid @IsEmailUser String email, @RequestBody UserDto userDto) {
         return userService.updateUser(email, userDto);
     }
 
-    @DeleteMapping(value = "/{email}")
+    @DeleteMapping(value = "/users/{email}")
     public ResponseEntity<Void> deleteUser(@PathVariable @EmailValid @IsEmailUser String email) {
         userService.deleteUser(email);
         return ResponseEntity.noContent().build();

@@ -50,12 +50,6 @@ public class ErrorHandler {
         return new Error(ex.getMessage());
     }
 
-    @ExceptionHandler(NullPointerException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public String handleNullPointerException(NullPointerException ex) {
-        return ex.getMessage();
-    }
-
     @ExceptionHandler(BookNotAvailableException.class)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Error handleBookNotAvailableException(BookNotAvailableException ex) {

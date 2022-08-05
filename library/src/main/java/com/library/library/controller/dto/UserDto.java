@@ -1,6 +1,9 @@
 package com.library.library.controller.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.library.library.controller.validation.EmailValid;
+import com.library.library.controller.validation.PasswordValid;
 import com.library.library.controller.validation.PhoneNumberValid;
 import com.library.library.controller.validation.PostalCodeValid;
 import com.library.library.controller.validation.UniqueEmail;
@@ -24,6 +27,8 @@ public class UserDto {
     @UniqueEmail
     @EmailValid
     private String email;
+    @PasswordValid
+    private String password;
     private Role role;
     @PhoneNumberValid
     private String phone;
