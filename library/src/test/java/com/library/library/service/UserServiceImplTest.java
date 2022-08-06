@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -41,6 +42,9 @@ public class UserServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     private final User user = getUser();
     private final UserDto userDto = getUserDto();
@@ -89,6 +93,7 @@ public class UserServiceImplTest {
     public void createUserTest() {
         //given
         when(userRepository.existsUserByEmail(userDto.getEmail())).thenReturn(false);
+        when(passwordEncoder.encode(userDto.getPassword())).thenReturn(userDto.getPassword());
         when(userRepository.save(isA(User.class))).thenReturn(user);
 
         //when
