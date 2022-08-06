@@ -51,7 +51,7 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler(BookNotAvailableException.class)
-    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     public Error handleBookNotAvailableException(BookNotAvailableException ex) {
         log.error("handleBookNotAvailableException: exception {}", ex.getMessage(), ex);
         return new Error(ex.getMessage());
