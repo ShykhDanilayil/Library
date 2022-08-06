@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +26,7 @@ import static java.lang.String.format;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-//    private final PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public boolean isEmailAlreadyInUse(String email) {
@@ -55,7 +56,7 @@ public class UserServiceImpl implements UserService {
             throw new UserAlreadyExistsException(format("User with email %s exists", email));
         }
         User user = UserMapper.INSTANCE.mapUser(userDto);
-//        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
         user.setRole(Role.USER);
         user.setWrittenOn(Instant.now());
         userRepository.save(user);

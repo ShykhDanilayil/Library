@@ -6,6 +6,7 @@ import com.library.library.controller.dto.AuthorDto;
 import com.library.library.controller.dto.BookDto;
 import com.library.library.service.AuthorService;
 import com.library.library.service.BookService;
+import com.library.library.service.impl.MyUserDetailsService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -17,8 +18,11 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithAnonymousUser;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import javax.sql.DataSource;
 import java.util.Collections;
 import java.util.List;
 
@@ -32,8 +36,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@WithMockUser(username = "librarian", roles = "LIBRARIAN", password = "librarian")
 @WebMvcTest(value = BookController.class)
 @AutoConfigureMockMvc
 @Import(TestWebConfig.class)
@@ -46,9 +52,16 @@ public class BookControllerTest {
     private ObjectMapper objectMapper;
 
     @MockBean
-    BookService bookService;
+    private BookService bookService;
+
     @MockBean
-    AuthorService authorService;
+    private AuthorService authorService;
+
+    @MockBean
+    private MyUserDetailsService myUserDetailsService;
+
+    @MockBean
+    private DataSource dataSource;
 
     private final AuthorDto authorDto = getAuthorDto();
     private final BookDto bookDto = getBookDto();
@@ -67,6 +80,43 @@ public class BookControllerTest {
                 .andExpect(jsonPath("$.description").value(bookDto.getDescription()))
                 .andExpect(jsonPath("$.pages").value(bookDto.getPages()))
                 .andExpect(jsonPath("$.publicationYear").value(bookDto.getPublicationYear()));
+    }
+
+    @Test
+    @WithMockUser
+    void getBookTestRoleUser() throws Exception {
+        mockMvc.perform(get("/books/" + bookDto.getTitle())
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+
+        verify(bookService, never()).isExistBookTitle(bookDto.getTitle());
+        verify(bookService, never()).getBook(bookDto.getTitle());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void getBookTestRoleAdmin() throws Exception {
+        mockMvc.perform(get("/books/" + bookDto.getTitle())
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+
+        verify(bookService, never()).isExistBookTitle(bookDto.getTitle());
+        verify(bookService, never()).getBook(bookDto.getTitle());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void getBookTestNotAuthorized() throws Exception {
+        mockMvc.perform(get("/books/" + bookDto.getTitle())
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("http://localhost/login"));
+
+        verify(bookService, never()).isExistBookTitle(bookDto.getTitle());
+        verify(bookService, never()).getBook(bookDto.getTitle());
     }
 
     @Test

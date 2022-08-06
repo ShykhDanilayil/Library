@@ -15,19 +15,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.validation.Valid;
 import java.util.Set;
 
 @Validated
@@ -43,13 +40,6 @@ public class LibraryController {
 
     private final LibraryService libraryService;
 
-    @ApiOperation("Create Library")
-    @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping
-    public LibraryDto createLibrary(@RequestBody @Valid LibraryDto libraryDto) {
-        return libraryService.createLibrary(libraryDto);
-    }
-
     @ApiOperation("All libraries page")
     @ResponseStatus(HttpStatus.OK)
     @GetMapping
@@ -64,21 +54,8 @@ public class LibraryController {
         return libraryService.getLibrary(name);
     }
 
-    @ApiOperation("Delete library")
-    @DeleteMapping(value = "/{name}")
-    public ResponseEntity<Void> deleteLibrary(@PathVariable @IsNameLibrary String name) {
-        libraryService.deleteLibrary(name);
-        return ResponseEntity.noContent().build();
-    }
-
-    @ApiOperation("Library add book")
-    @ResponseStatus(HttpStatus.OK)
-    @PostMapping(value = "/books")
-    public LibraryDto addBook(@RequestParam @IsNameLibrary String libraryName, @RequestParam @IsTitleBook String bookTitle) {
-        return libraryService.addBook(libraryName, bookTitle);
-    }
-
     @ApiOperation("Library add user")
+    @PreAuthorize("hasAnyRole('USER','LIBRARIAN')")
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/users")
     public void addUser(@RequestParam @IsNameLibrary String libraryName, @RequestParam @EmailValid @IsEmailUser String email) {
@@ -99,8 +76,8 @@ public class LibraryController {
         return libraryService.getAllBooks(libraryName);
     }
 
-
     @ApiOperation("Reserved book")
+    @PreAuthorize("hasAnyRole('USER','LIBRARIAN')")
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/reserve")
     public void reserveBook(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam String libraryName) {
@@ -108,6 +85,7 @@ public class LibraryController {
     }
 
     @ApiOperation("Borrow book")
+    @PreAuthorize("hasAnyRole('USER','LIBRARIAN')")
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/borrow")
     public void borrowBook(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam String libraryName) {
@@ -116,6 +94,7 @@ public class LibraryController {
     }
 
     @ApiOperation("Return book")
+    @PreAuthorize("hasAnyRole('USER','LIBRARIAN')")
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/return")
     public void returnBook(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName) {

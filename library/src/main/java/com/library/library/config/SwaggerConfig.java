@@ -67,6 +67,28 @@ public class SwaggerConfig {
     }
 
     @Bean
+    public Docket adminApi() {
+        return new Docket(DocumentationType.SWAGGER_2)
+                .groupName("admin")
+                .select()
+                .apis(RequestHandlerSelectors.basePackage("com.library.library.controller"))
+                .paths(PathSelectors.ant("/admin/**"))
+                .build()
+                .apiInfo(apiInfo());
+    }
+
+    @Bean
+    public Docket librarianApi() {
+        return new Docket(DocumentationType.SWAGGER_2)
+                .groupName("librarian")
+                .select()
+                .apis(RequestHandlerSelectors.basePackage("com.library.library.controller"))
+                .paths(PathSelectors.ant("/librarian/**"))
+                .build()
+                .apiInfo(apiInfo());
+    }
+
+    @Bean
     public LinkDiscoverers discoverers() {
         List<LinkDiscoverer> plugins = new ArrayList<>();
         plugins.add(new CollectionJsonLinkDiscoverer());

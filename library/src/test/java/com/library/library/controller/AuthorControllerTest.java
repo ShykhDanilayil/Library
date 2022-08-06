@@ -5,6 +5,7 @@ import com.library.library.config.TestWebConfig;
 import com.library.library.controller.dto.AuthorDto;
 import com.library.library.controller.dto.BookDto;
 import com.library.library.service.AuthorService;
+import com.library.library.service.impl.MyUserDetailsService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -16,8 +17,11 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithAnonymousUser;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,14 +31,17 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(value = AuthorController.class)
+@WithMockUser(username = "librarian", roles = "LIBRARIAN", password = "librarian")
+@WebMvcTest(AuthorController.class)
 @AutoConfigureMockMvc
 @Import(TestWebConfig.class)
 public class AuthorControllerTest {
@@ -46,7 +53,13 @@ public class AuthorControllerTest {
     private ObjectMapper objectMapper;
 
     @MockBean
-    AuthorService authorService;
+    private AuthorService authorService;
+
+    @MockBean
+    private MyUserDetailsService myUserDetailsService;
+
+    @MockBean
+    private DataSource dataSource;
 
     private final AuthorDto authorDto = getAuthorDto();
     private final BookDto bookDto = getBookDto();
@@ -58,12 +71,56 @@ public class AuthorControllerTest {
 
         mockMvc.perform(post("/authors")
                 .content(objectMapper.writeValueAsString(authorDto))
-                .contentType(MediaType.APPLICATION_JSON))
+                .contentType(MediaType.APPLICATION_JSON)
+                .with(csrf()))
                 .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.name").value(authorDto.getName()))
                 .andExpect(jsonPath("$.nickname").value(authorDto.getNickname()));
+    }
+
+    @Test
+    @WithMockUser
+    void createAuthorTestRoleUser() throws Exception {
+        mockMvc.perform(post("/authors")
+                .content(objectMapper.writeValueAsString(authorDto))
+                .contentType(MediaType.APPLICATION_JSON)
+                .with(csrf()))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+
+        verify(authorService, never()).isNicknameAlreadyInUse(any());
+        verify(authorService, never()).createAuthor(any());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void createAuthorTestRoleAdmin() throws Exception {
+        mockMvc.perform(post("/authors")
+                .content(objectMapper.writeValueAsString(authorDto))
+                .contentType(MediaType.APPLICATION_JSON)
+                .with(csrf()))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+
+        verify(authorService, never()).isNicknameAlreadyInUse(any());
+        verify(authorService, never()).createAuthor(any());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void createAuthorTestNotAuthorized() throws Exception {
+        mockMvc.perform(post("/authors")
+                .content(objectMapper.writeValueAsString(authorDto))
+                .contentType(MediaType.APPLICATION_JSON)
+                .with(csrf()))
+                .andDo(print())
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("http://localhost/login"));
+
+        verify(authorService, never()).isNicknameAlreadyInUse(any());
+        verify(authorService, never()).createAuthor(any());
     }
 
     @Test
