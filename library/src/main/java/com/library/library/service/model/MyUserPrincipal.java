@@ -18,7 +18,7 @@ public class MyUserPrincipal implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.<GrantedAuthority>singletonList(new SimpleGrantedAuthority(user.getRole().toString()));
+        return Collections.<GrantedAuthority>singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().toString()));
     }
 
     @Override
@@ -38,7 +38,7 @@ public class MyUserPrincipal implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return user.isAccountNonLocked();
     }
 
     @Override

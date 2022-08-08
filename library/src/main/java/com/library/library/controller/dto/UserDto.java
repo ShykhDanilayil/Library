@@ -30,6 +30,7 @@ public class UserDto {
     @PasswordValid
     private String password;
     private Role role;
+    private boolean isAccountNonLocked;
     @PhoneNumberValid
     private String phone;
     @DateTimeFormat(pattern = "dd/MM/yyyy")

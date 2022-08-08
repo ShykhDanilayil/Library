@@ -43,6 +43,7 @@ public class User {
     private String password;
     @Enumerated(EnumType.STRING)
     private Role role;
+    private boolean isAccountNonLocked;
     private String phone;
     private Date birthday;
     private String country;
