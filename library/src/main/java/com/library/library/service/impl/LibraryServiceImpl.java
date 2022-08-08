@@ -157,7 +157,7 @@ public class LibraryServiceImpl implements LibraryService {
     public void reserveBook(String bookTitle, String userEmail, String libraryName) {
         log.info("User with email {} reserve book with title {} in library {}", userEmail, bookTitle, libraryName);
         User user = userRepo.findUserByEmail(userEmail);
-        if (borrowedRepo.existsBorrowedByUser(user) && user.isAccountNonLocked()) {
+        if (borrowedRepo.existsBorrowedByUser(user) || !user.isAccountNonLocked()) {
             log.error("User with email {} didn't return the last book", userEmail);
             throw new ReservedException(format("User with email %s didn't return the last book", userEmail));
         }

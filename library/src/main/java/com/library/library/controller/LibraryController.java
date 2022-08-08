@@ -16,6 +16,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.util.Set;
 
 @Validated
@@ -77,7 +81,7 @@ public class LibraryController {
     }
 
     @ApiOperation("Reserved book")
-    @PreAuthorize("hasAnyRole('USER','LIBRARIAN')")
+    @PreAuthorize("hasAnyRole('USER')")
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/reserve")
     public void reserveBook(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam String libraryName) {
@@ -85,19 +89,18 @@ public class LibraryController {
     }
 
     @ApiOperation("Borrow book")
-    @PreAuthorize("hasAnyRole('USER','LIBRARIAN')")
+    @PreAuthorize("hasAnyRole('USER')")
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/borrow")
-    public void borrowBook(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam String libraryName) {
-//    public void borrowBook(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName) {
-        libraryService.borrowBook(bookTitle, userEmail, libraryName);
+    public void borrowBook(@RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName, Principal principal) {
+        libraryService.borrowBook(bookTitle, principal.getName(), libraryName);
     }
 
     @ApiOperation("Return book")
-    @PreAuthorize("hasAnyRole('USER','LIBRARIAN')")
+    @PreAuthorize("hasAnyRole('USER')")
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/return")
-    public void returnBook(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName) {
-        libraryService.returnBook(bookTitle, userEmail, libraryName);
+    public void returnBook(@RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName, @AuthenticationPrincipal UserDetails activeUser) throws Exception {
+        libraryService.returnBook(bookTitle, activeUser.getUsername(), libraryName);
     }
 }

@@ -8,6 +8,9 @@ import com.library.library.controller.dto.UserDto;
 import com.library.library.service.BookService;
 import com.library.library.service.LibraryService;
 import com.library.library.service.UserService;
+import com.library.library.service.exception.BookNotAvailableException;
+import com.library.library.service.exception.BorrowedException;
+import com.library.library.service.exception.ReservedException;
 import com.library.library.service.impl.MyUserDetailsService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,8 +28,11 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
+import static java.lang.String.format;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.times;
@@ -112,7 +118,7 @@ public class LibrarianControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
+    @WithMockUser(roles = "USER")
     void createLibraryTestRoleAdmin() throws Exception {
         mockMvc.perform(post("/librarian/libraries")
                 .content(objectMapper.writeValueAsString(libraryDto))
@@ -235,7 +241,7 @@ public class LibrarianControllerTest {
         when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
         when(libraryService.addBook(libraryDto.getName(), bookDto.getTitle())).thenReturn(libraryDto);
 
-        mockMvc.perform(post("/librarian/books")
+        mockMvc.perform(post("/librarian/libraries/books")
                 .param("libraryName", libraryDto.getName())
                 .param("bookTitle", bookDto.getTitle()))
                 .andDo(print())
@@ -253,7 +259,7 @@ public class LibrarianControllerTest {
         when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
         when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(false);
 
-        mockMvc.perform(post("/librarian/books")
+        mockMvc.perform(post("/librarian/libraries/books")
                 .param("libraryName", libraryDto.getName())
                 .param("bookTitle", bookDto.getTitle()))
                 .andDo(print())
@@ -272,7 +278,7 @@ public class LibrarianControllerTest {
         when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(false);
         when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
 
-        mockMvc.perform(post("/librarian/books")
+        mockMvc.perform(post("/librarian/libraries/books")
                 .param("libraryName", libraryDto.getName())
                 .param("bookTitle", bookDto.getTitle()))
                 .andDo(print())
@@ -283,6 +289,464 @@ public class LibrarianControllerTest {
         verify(libraryService, times(1)).isNameAlreadyInUse(libraryDto.getName());
         verify(bookService, times(1)).isExistBookTitle(bookDto.getTitle());
         verify(libraryService, never()).addBook(any(), any());
+    }
+
+    @Test
+    void reserveBookControlTest() throws Exception {
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
+        when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+        doNothing().when(libraryService).reserveBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+
+        mockMvc.perform(post("/librarian/libraries/reserve")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isOk());
+
+        verify(userService).isEmailAlreadyInUse(userDto.getEmail());
+        verify(bookService).isExistBookTitle(bookDto.getTitle());
+        verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
+        verify(libraryService).reserveBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void reserveBookControlTestNotAuthorized() throws Exception {
+        mockMvc.perform(post("/librarian/libraries/reserve")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("http://localhost/login"));
+
+        verify(userService, never()).isEmailAlreadyInUse(anyString());
+        verify(bookService, never()).isExistBookTitle(anyString());
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(libraryService, never()).reserveBook(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void reserveBookControlTestRoleUser() throws Exception {
+        mockMvc.perform(post("/librarian/libraries/reserve")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+
+        verify(userService, never()).isEmailAlreadyInUse(anyString());
+        verify(bookService, never()).isExistBookTitle(anyString());
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(libraryService, never()).reserveBook(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void reserveBookControlLibNameExceptionTest() throws Exception {
+        String message = "reserveBook.libraryName: This library name doesn't exists!";
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
+        when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(false);
+
+        mockMvc.perform(post("/librarian/libraries/reserve")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(userService).isEmailAlreadyInUse(userDto.getEmail());
+        verify(bookService).isExistBookTitle(bookDto.getTitle());
+        verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
+        verify(libraryService, never()).reserveBook(any(), any(), any());
+    }
+
+    @Test
+    void reserveBookControlTitleExceptionTest() throws Exception {
+        String message = "reserveBook.bookTitle: This book title doesn't exists!";
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
+        when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(false);
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+
+        mockMvc.perform(post("/librarian/libraries/reserve")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(userService).isEmailAlreadyInUse(userDto.getEmail());
+        verify(bookService).isExistBookTitle(bookDto.getTitle());
+        verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
+        verify(libraryService, never()).reserveBook(any(), any(), any());
+    }
+
+    @Test
+    void reserveBookControlUserEmailExceptionTest() throws Exception {
+        String message = "reserveBook.userEmail: This email doesn't exists!";
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(false);
+        when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+
+        mockMvc.perform(post("/librarian/libraries/reserve")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(userService).isEmailAlreadyInUse(userDto.getEmail());
+        verify(bookService).isExistBookTitle(bookDto.getTitle());
+        verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
+        verify(libraryService, never()).reserveBook(any(), any(), any());
+    }
+
+    @Test
+    void reserveBookControlReservedExceptionTest() throws Exception {
+        String message = format("User with email %s didn't return the last book", getUserDto().getEmail());
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
+        when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+
+        doThrow(new ReservedException(message)).when(libraryService).reserveBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+
+        mockMvc.perform(post("/librarian/libraries/reserve")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(userService).isEmailAlreadyInUse(userDto.getEmail());
+        verify(bookService).isExistBookTitle(bookDto.getTitle());
+        verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
+        verify(libraryService).reserveBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void reserveBookControlNotAvailableExceptionTest() throws Exception {
+        String message = format("Available book with this title %s doesn't exist in library with this name %s", bookDto.getTitle(), libraryDto.getName());
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
+        when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+
+        doThrow(new BookNotAvailableException(message)).when(libraryService).reserveBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+
+        mockMvc.perform(post("/librarian/libraries/reserve")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(userService).isEmailAlreadyInUse(userDto.getEmail());
+        verify(bookService).isExistBookTitle(bookDto.getTitle());
+        verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
+        verify(libraryService).reserveBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void borrowBookControlTest() throws Exception {
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
+        when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+        doNothing().when(libraryService).borrowBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+
+        mockMvc.perform(post("/librarian/libraries/borrow")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isOk());
+
+        verify(userService).isEmailAlreadyInUse(userDto.getEmail());
+        verify(bookService).isExistBookTitle(bookDto.getTitle());
+        verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
+        verify(libraryService).borrowBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void borrowBookControlTestNotAuthorized() throws Exception {
+        mockMvc.perform(post("/librarian/libraries/borrow")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("http://localhost/login"));
+
+        verify(userService, never()).isEmailAlreadyInUse(anyString());
+        verify(bookService, never()).isExistBookTitle(anyString());
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(libraryService, never()).borrowBook(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void borrowBookControlTestRoleUser() throws Exception {
+        mockMvc.perform(post("/librarian/libraries/borrow")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+
+        verify(userService, never()).isEmailAlreadyInUse(anyString());
+        verify(bookService, never()).isExistBookTitle(anyString());
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(libraryService, never()).borrowBook(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void borrowBookControlLibNameExceptionTest() throws Exception {
+        String message = "borrowBookControl.libraryName: This library name doesn't exists!";
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
+        when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(false);
+
+        mockMvc.perform(post("/librarian/libraries/borrow")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(userService).isEmailAlreadyInUse(userDto.getEmail());
+        verify(bookService).isExistBookTitle(bookDto.getTitle());
+        verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
+        verify(libraryService, never()).borrowBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void borrowBookControlTitleExceptionTest() throws Exception {
+        String message = "borrowBookControl.bookTitle: This book title doesn't exists!";
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
+        when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(false);
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+
+        mockMvc.perform(post("/librarian/libraries/borrow")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(userService).isEmailAlreadyInUse(userDto.getEmail());
+        verify(bookService).isExistBookTitle(bookDto.getTitle());
+        verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
+        verify(libraryService, never()).borrowBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+    }
+
+    @Test
+    void borrowBookControlUserEmailExceptionTest() throws Exception {
+        String message = "borrowBookControl.userEmail: This email doesn't exists!";
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(false);
+        when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+
+        mockMvc.perform(post("/librarian/libraries/borrow")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(userService).isEmailAlreadyInUse(userDto.getEmail());
+        verify(bookService).isExistBookTitle(bookDto.getTitle());
+        verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
+        verify(libraryService, never()).borrowBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void borrowBookControlReservedExceptionTest() throws Exception {
+        String message = format("Reserved with book %s is not found", bookDto.getTitle());
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
+        when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+
+        doThrow(new ReservedException(message)).when(libraryService).borrowBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+
+        mockMvc.perform(post("/librarian/libraries/borrow")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(userService).isEmailAlreadyInUse(userDto.getEmail());
+        verify(bookService).isExistBookTitle(bookDto.getTitle());
+        verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
+        verify(libraryService).borrowBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+    }
+
+    @Test
+    void returnBookControlTest() throws Exception {
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
+        when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+        doNothing().when(libraryService).returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+
+        mockMvc.perform(post("/librarian/libraries/return")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isOk());
+
+        verify(userService).isEmailAlreadyInUse(userDto.getEmail());
+        verify(bookService).isExistBookTitle(bookDto.getTitle());
+        verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
+        verify(libraryService).returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void returnBookControlTestNotAuthorized() throws Exception {
+        mockMvc.perform(post("/librarian/libraries/return")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("http://localhost/login"));
+
+        verify(userService, never()).isEmailAlreadyInUse(anyString());
+        verify(bookService, never()).isExistBookTitle(anyString());
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void returnBookControlTestRoleAdmin() throws Exception {
+        mockMvc.perform(post("/librarian/libraries/return")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+
+        verify(userService, never()).isEmailAlreadyInUse(anyString());
+        verify(bookService, never()).isExistBookTitle(anyString());
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void returnBookControlLibNameExceptionTest() throws Exception {
+        String message = "returnBookControl.libraryName: This library name doesn't exists!";
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
+        when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(false);
+
+        mockMvc.perform(post("/librarian/libraries/return")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(userService).isEmailAlreadyInUse(userDto.getEmail());
+        verify(bookService).isExistBookTitle(bookDto.getTitle());
+        verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
+        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void returnBookControlTitleExceptionTest() throws Exception {
+        String message = "returnBookControl.bookTitle: This book title doesn't exists!";
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
+        when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(false);
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+
+        mockMvc.perform(post("/librarian/libraries/return")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(userService).isEmailAlreadyInUse(userDto.getEmail());
+        verify(bookService).isExistBookTitle(bookDto.getTitle());
+        verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
+        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void returnBookControlUserEmailExceptionTest() throws Exception {
+        String message = "returnBookControl.userEmail: This email doesn't exists!";
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(false);
+        when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+
+        mockMvc.perform(post("/librarian/libraries/return")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(userService).isEmailAlreadyInUse(userDto.getEmail());
+        verify(bookService).isExistBookTitle(bookDto.getTitle());
+        verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
+        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void returnBookControlBorrowedExceptionTest() throws Exception {
+        String message = format("Borrowed with book %s is not found", bookDto.getTitle());
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
+        when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+        doThrow(new BorrowedException(message)).when(libraryService).returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+
+        mockMvc.perform(post("/librarian/libraries/return")
+                .param("userEmail", userDto.getEmail())
+                .param("bookTitle", bookDto.getTitle())
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(userService).isEmailAlreadyInUse(userDto.getEmail());
+        verify(bookService).isExistBookTitle(bookDto.getTitle());
+        verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
+        verify(libraryService).returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
     }
 
     private LibraryDto getLibraryDto() {

@@ -95,7 +95,7 @@ public class BookControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
+    @WithMockUser(roles = "USER")
     void getBookTestRoleAdmin() throws Exception {
         mockMvc.perform(get("/books/" + bookDto.getTitle())
                 .contentType(MediaType.APPLICATION_JSON))
@@ -136,6 +136,7 @@ public class BookControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getAllBooksTest() throws Exception {
         Pageable pageable = PageRequest.of(0, 2);
         List<BookDto> bookDtos = Collections.singletonList(bookDto);
@@ -204,6 +205,7 @@ public class BookControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getAuthorByBookTest() throws Exception {
         when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
         when(bookService.getAuthorByBook(bookDto.getTitle())).thenReturn(authorDto);

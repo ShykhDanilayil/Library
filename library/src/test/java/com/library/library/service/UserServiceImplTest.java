@@ -121,6 +121,7 @@ public class UserServiceImplTest {
     public void updateUserTest() {
         //given
         when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
+        when(passwordEncoder.encode(userDto.getPassword())).thenReturn(userDto.getPassword());
         when(userRepository.save(isA(User.class))).thenReturn(user);
 
         //when
@@ -163,6 +164,7 @@ public class UserServiceImplTest {
         User updateUser = UserMapper.INSTANCE.mapUser(updateUserDto);
         //given
         when(userRepository.findUserByEmail(user.getEmail())).thenReturn(updateUser);
+        when(passwordEncoder.encode(userDto.getPassword())).thenReturn(userDto.getPassword());
         when(userRepository.save(isA(User.class))).thenReturn(updateUser);
 
         //when
@@ -183,6 +185,7 @@ public class UserServiceImplTest {
         User updateUser = UserMapper.INSTANCE.mapUser(updateUserDto);
         //given
         when(userRepository.findUserByEmail(user.getEmail())).thenReturn(updateUser);
+        when(passwordEncoder.encode(userDto.getPassword())).thenReturn(userDto.getPassword());
         when(userRepository.save(isA(User.class))).thenReturn(updateUser);
 
         //when

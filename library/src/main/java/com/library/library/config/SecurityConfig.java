@@ -43,7 +43,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .disable()
                 .authorizeRequests()
                 .antMatchers("/admin/**").hasRole(Role.ADMIN.toString())
-                .antMatchers("/librarian/**", "/authors/**", "/books/**").hasRole(Role.LIBRARIAN.toString())
+                .antMatchers("/librarian/**", "/authors/**", "/books/**").hasAnyRole(Role.LIBRARIAN.toString(), Role.ADMIN.toString())
                 .antMatchers("/registration", "/libraries/**", "/actuator/**").permitAll()
                 .anyRequest().authenticated()
                 .and()

@@ -267,6 +267,7 @@ public class LibraryServiceImplTest {
     @Test
     void reserveBookTest() {
         library.setBooks(Collections.singleton(book));
+        user.setAccountNonLocked(true);
         //given
         when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
         when(borrowedRepository.existsBorrowedByUser(user)).thenReturn(false);
@@ -287,6 +288,7 @@ public class LibraryServiceImplTest {
     void reserveBookNotAvailableExceptionTest() {
         book.setStatus(BookStatus.RESERVED);
         library.setBooks(Collections.singleton(book));
+        user.setAccountNonLocked(true);
         //given
         when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
         when(borrowedRepository.existsBorrowedByUser(user)).thenReturn(false);
@@ -321,10 +323,29 @@ public class LibraryServiceImplTest {
     }
 
     @Test
+    void reserveBookExceptionTestAccountLocked() {
+        //given
+        user.setAccountNonLocked(false);
+        when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
+        when(borrowedRepository.existsBorrowedByUser(user)).thenReturn(false);
+
+        //when
+        assertThrows(ReservedException.class,
+                () -> libraryService.reserveBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName()));
+
+        //then
+        verify(userRepository, times(1)).findUserByEmail(userDto.getEmail());
+        verify(borrowedRepository, times(1)).existsBorrowedByUser(user);
+        verify(libraryRepository, never()).findLibraryByLibraryName(any());
+        verify(reservedRepository, never()).save(any());
+    }
+
+    @Test
     void reserveBookNotEqualsTitleTest34() {
         Book newBook = book;
         newBook.setTitle("new Title");
         library.setBooks(Collections.singleton(newBook));
+        user.setAccountNonLocked(true);
         //given
         when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
         when(borrowedRepository.existsBorrowedByUser(user)).thenReturn(false);
@@ -381,7 +402,7 @@ public class LibraryServiceImplTest {
     }
 
     @Test
-    void returnBookTest() {
+    void returnBookTest() throws Exception {
         //given
         when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
         when(libraryRepository.findLibraryByLibraryName(libraryDto.getName())).thenReturn(library);
@@ -400,7 +421,7 @@ public class LibraryServiceImplTest {
     }
 
     @Test
-    void returnBookPenaltyTest() {
+    void returnBookPenaltyTest() throws Exception {
         Borrowed borrowed = getBorrowed();
         borrowed.setDueDate(Calendar.getInstance().getTime());
         //given
@@ -471,6 +492,7 @@ public class LibraryServiceImplTest {
                 .lastName("Smikh")
                 .email("string@test.com")
                 .role(Role.USER)
+                .isAccountNonLocked(true)
                 .postalCode("12345")
                 .build();
     }

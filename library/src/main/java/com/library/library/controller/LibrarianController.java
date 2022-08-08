@@ -1,6 +1,8 @@
 package com.library.library.controller;
 
 import com.library.library.controller.dto.LibraryDto;
+import com.library.library.controller.validation.EmailValid;
+import com.library.library.controller.validation.IsEmailUser;
 import com.library.library.controller.validation.IsNameLibrary;
 import com.library.library.controller.validation.IsTitleBook;
 import com.library.library.service.LibraryService;
@@ -25,7 +27,7 @@ import javax.validation.Valid;
 
 @Validated
 @RestController
-@RequestMapping("/librarian")
+@RequestMapping("/librarian/libraries")
 @RequiredArgsConstructor
 @Api(tags = "API description for SWAGGER documentation")
 @ApiResponses({
@@ -38,13 +40,13 @@ public class LibrarianController {
 
     @ApiOperation("Create Library")
     @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping("/libraries")
+    @PostMapping()
     public LibraryDto createLibrary(@RequestBody @Valid LibraryDto libraryDto) {
         return libraryService.createLibrary(libraryDto);
     }
 
     @ApiOperation("Delete library")
-    @DeleteMapping(value = "/libraries/{name}")
+    @DeleteMapping(value = "/{name}")
     public ResponseEntity<Void> deleteLibrary(@PathVariable @IsNameLibrary String name) {
         libraryService.deleteLibrary(name);
         return ResponseEntity.noContent().build();
@@ -55,5 +57,26 @@ public class LibrarianController {
     @PostMapping(value = "/books")
     public LibraryDto addBook(@RequestParam @IsNameLibrary String libraryName, @RequestParam @IsTitleBook String bookTitle) {
         return libraryService.addBook(libraryName, bookTitle);
+    }
+
+    @ApiOperation("Reserved book")
+    @ResponseStatus(HttpStatus.OK)
+    @PostMapping(value = "/reserve")
+    public void reserveBookControl(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName) {
+        libraryService.reserveBook(bookTitle, userEmail, libraryName);
+    }
+
+    @ApiOperation("Borrow book")
+    @ResponseStatus(HttpStatus.OK)
+    @PostMapping(value = "/borrow")
+    public void borrowBookControl(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName) {
+        libraryService.borrowBook(bookTitle, userEmail, libraryName);
+    }
+
+    @ApiOperation("Return book")
+    @ResponseStatus(HttpStatus.OK)
+    @PostMapping(value = "/return")
+    public void returnBookControl(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName) throws Exception {
+        libraryService.returnBook(bookTitle, userEmail, libraryName);
     }
 }

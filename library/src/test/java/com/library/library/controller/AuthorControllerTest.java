@@ -95,7 +95,7 @@ public class AuthorControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
+    @WithMockUser(roles = "USER")
     void createAuthorTestRoleAdmin() throws Exception {
         mockMvc.perform(post("/authors")
                 .content(objectMapper.writeValueAsString(authorDto))
@@ -124,6 +124,7 @@ public class AuthorControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void createAuthorNicknameException() throws Exception {
         String message = "There is already author with this nickname!";
         when(authorService.isNicknameAlreadyInUse(authorDto.getNickname())).thenReturn(true);
@@ -155,6 +156,7 @@ public class AuthorControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getAllAuthorsTest() throws Exception {
         Pageable pageable = PageRequest.of(1, 8);
         List<AuthorDto> authorDtos = new ArrayList<>();
@@ -171,6 +173,7 @@ public class AuthorControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getBooksAuthorTest() throws Exception {
         when(authorService.isNicknameAlreadyInUse(authorDto.getNickname())).thenReturn(true);
         when(authorService.getAuthorBooks(authorDto.getNickname())).thenReturn(Collections.singleton(bookDto));
