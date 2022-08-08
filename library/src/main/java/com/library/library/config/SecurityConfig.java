@@ -33,6 +33,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .withUser("admin").password(passwordEncoder().encode("adminPass")).roles(Role.ADMIN.toString())
                 .and().withUser("librarian").password(passwordEncoder().encode("librarianPass")).roles(Role.LIBRARIAN.toString())
                 .and().withUser("user").password(passwordEncoder().encode("userPass")).roles(Role.USER.toString());
+        auth
+                .authenticationProvider(authenticationProvider());
     }
 
     @Override
