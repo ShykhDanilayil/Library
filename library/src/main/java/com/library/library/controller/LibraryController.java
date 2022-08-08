@@ -100,7 +100,7 @@ public class LibraryController {
     @PreAuthorize("hasAnyRole('USER')")
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/return")
-    public void returnBook(@RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName, @AuthenticationPrincipal UserDetails activeUser) throws Exception {
+    public void returnBook(@RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName, @AuthenticationPrincipal UserDetails activeUser) {
         libraryService.returnBook(bookTitle, activeUser.getUsername(), libraryName);
     }
 }
