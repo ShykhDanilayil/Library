@@ -34,8 +34,7 @@ public class SwaggerConfig {
                 .apiInfo(apiInfo())
                 .groupName("library_v1")
                 .select()
-                .apis(RequestHandlerSelectors
-                        .basePackage("com.library.library.controller"))
+                .apis(RequestHandlerSelectors.basePackage("com.library.library.controller"))
                 .paths(PathSelectors.any())
                 .build()
                 .securitySchemes(basicScheme())
