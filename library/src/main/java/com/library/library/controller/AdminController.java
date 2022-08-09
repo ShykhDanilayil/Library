@@ -4,9 +4,8 @@ import com.library.library.controller.dto.UserDto;
 import com.library.library.controller.validation.EmailValid;
 import com.library.library.controller.validation.IsEmailUser;
 import com.library.library.service.UserService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.Authorization;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,21 +24,18 @@ import javax.validation.Valid;
 @RestController
 @RequestMapping("/admin")
 @RequiredArgsConstructor
-@Api(tags = "API description for SWAGGER documentation")
-@ApiResponses({
-        @ApiResponse(code = 404, message = "Not found"),
-        @ApiResponse(code = 500, message = "Internal Server Error")
-})
 public class AdminController {
 
     private final UserService userService;
 
+    @ApiOperation(value = "Update user", authorizations = {@Authorization(value = "basicAuth")})
     @ResponseStatus(HttpStatus.OK)
     @PutMapping(value = "/users/{email}")
     public UserDto updateUser(@PathVariable @EmailValid @IsEmailUser String email, @RequestBody @Valid UserDto userDto) {
         return userService.updateUser(email, userDto);
     }
 
+    @ApiOperation(value = "Delete user", authorizations = {@Authorization(value = "basicAuth")})
     @DeleteMapping(value = "/users/{email}")
     public ResponseEntity<Void> deleteUser(@PathVariable @EmailValid @IsEmailUser String email) {
         userService.deleteUser(email);

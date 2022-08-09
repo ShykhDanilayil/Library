@@ -5,10 +5,8 @@ import com.library.library.controller.dto.BookDto;
 import com.library.library.controller.validation.IsNickName;
 import com.library.library.controller.validation.IsTitleBook;
 import com.library.library.service.BookService;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,37 +26,32 @@ import javax.validation.Valid;
 @RestController
 @RequestMapping("/books")
 @RequiredArgsConstructor
-@Api(tags = "API description for SWAGGER documentation")
-@ApiResponses({
-        @ApiResponse(code = 404, message = "Not found"),
-        @ApiResponse(code = 500, message = "Internal Server Error")
-})
 public class BookController {
 
     private final BookService bookService;
 
-    @ApiOperation("Get book")
+    @ApiOperation(value = "Get book (LIBRARIAN, ADMIN)", authorizations = {@Authorization(value = "basicAuth")})
     @ResponseStatus(HttpStatus.OK)
     @GetMapping(value = "/{bookTitle}")
     public BookDto getBook(@PathVariable @IsTitleBook String bookTitle) {
         return bookService.getBook(bookTitle);
     }
 
-    @ApiOperation("All books page")
+    @ApiOperation(value = "Get books page (LIBRARIAN, ADMIN)", authorizations = {@Authorization(value = "basicAuth")})
     @ResponseStatus(HttpStatus.OK)
     @GetMapping
     public Page<BookDto> getAllBooks(Pageable pageable) {
         return bookService.getAllBooks(pageable);
     }
 
-    @ApiOperation("Create book")
+    @ApiOperation(value = "Create book (LIBRARIAN, ADMIN)", authorizations = {@Authorization(value = "basicAuth")})
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping(value = "/{nickname}")
     public BookDto createBook(@PathVariable @IsNickName String nickname, @RequestBody @Valid BookDto bookDto) {
         return bookService.createBook(nickname, bookDto);
     }
 
-    @ApiOperation("Get author by book")
+    @ApiOperation(value = "Get author by book (LIBRARIAN, ADMIN)", authorizations = {@Authorization(value = "basicAuth")})
     @ResponseStatus(HttpStatus.OK)
     @GetMapping(value = "/{bookTitle}/author")
     public AuthorDto getAuthorByBook(@PathVariable @IsTitleBook String bookTitle) {

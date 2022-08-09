@@ -6,16 +6,22 @@ import org.springframework.hateoas.client.LinkDiscoverer;
 import org.springframework.hateoas.client.LinkDiscoverers;
 import org.springframework.hateoas.mediatype.collectionjson.CollectionJsonLinkDiscoverer;
 import org.springframework.plugin.core.SimplePluginRegistry;
+import org.springframework.web.bind.annotation.RequestMethod;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
+import springfox.documentation.builders.ResponseMessageBuilder;
 import springfox.documentation.service.ApiInfo;
+import springfox.documentation.service.BasicAuth;
 import springfox.documentation.service.Contact;
+import springfox.documentation.service.ResponseMessage;
+import springfox.documentation.service.SecurityScheme;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Configuration
@@ -23,69 +29,20 @@ import java.util.List;
 public class SwaggerConfig {
 
     @Bean
-    public Docket libraryApi() {
+    public Docket api() {
         return new Docket(DocumentationType.SWAGGER_2)
-                .groupName("library")
+                .apiInfo(apiInfo())
+                .groupName("library_v1")
                 .select()
-                .apis(RequestHandlerSelectors.basePackage("com.library.library.controller"))
-                .paths(PathSelectors.ant("/libraries/**"))
+                .apis(RequestHandlerSelectors
+                        .basePackage("com.library.library.controller"))
+                .paths(PathSelectors.any())
                 .build()
-                .apiInfo(apiInfo());
-    }
-
-    @Bean
-    public Docket userApi() {
-        return new Docket(DocumentationType.SWAGGER_2)
-                .groupName("user")
-                .select()
-                .apis(RequestHandlerSelectors.basePackage("com.library.library.controller"))
-                .paths(PathSelectors.ant("/users/**"))
-                .build()
-                .apiInfo(apiInfo());
-    }
-
-    @Bean
-    public Docket authorApi() {
-        return new Docket(DocumentationType.SWAGGER_2)
-                .groupName("author")
-                .select()
-                .apis(RequestHandlerSelectors.basePackage("com.library.library.controller"))
-                .paths(PathSelectors.ant("/authors/**"))
-                .build()
-                .apiInfo(apiInfo());
-    }
-
-    @Bean
-    public Docket bookApi() {
-        return new Docket(DocumentationType.SWAGGER_2)
-                .groupName("book")
-                .select()
-                .apis(RequestHandlerSelectors.basePackage("com.library.library.controller"))
-                .paths(PathSelectors.ant("/books/**"))
-                .build()
-                .apiInfo(apiInfo());
-    }
-
-    @Bean
-    public Docket adminApi() {
-        return new Docket(DocumentationType.SWAGGER_2)
-                .groupName("admin")
-                .select()
-                .apis(RequestHandlerSelectors.basePackage("com.library.library.controller"))
-                .paths(PathSelectors.ant("/admin/**"))
-                .build()
-                .apiInfo(apiInfo());
-    }
-
-    @Bean
-    public Docket librarianApi() {
-        return new Docket(DocumentationType.SWAGGER_2)
-                .groupName("librarian")
-                .select()
-                .apis(RequestHandlerSelectors.basePackage("com.library.library.controller"))
-                .paths(PathSelectors.ant("/librarian/**"))
-                .build()
-                .apiInfo(apiInfo());
+                .securitySchemes(basicScheme())
+                .globalResponseMessage(RequestMethod.POST, responseMessages)
+                .globalResponseMessage(RequestMethod.PUT, responseMessages)
+                .globalResponseMessage(RequestMethod.GET, responseMessages)
+                .globalResponseMessage(RequestMethod.DELETE, responseMessages);
     }
 
     @Bean
@@ -95,9 +52,18 @@ public class SwaggerConfig {
         return new LinkDiscoverers(SimplePluginRegistry.create(plugins));
     }
 
+    private final List<ResponseMessage> responseMessages = Collections.singletonList(
+            new ResponseMessageBuilder().code(500).message("Internal Server Error").build());
+
+    private List<SecurityScheme> basicScheme() {
+        List<SecurityScheme> schemeList = new ArrayList<>();
+        schemeList.add(new BasicAuth("basicAuth"));
+        return schemeList;
+    }
+
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
-                .title("Profile Api")
+                .title("Spring Library")
                 .contact(new Contact(
                         "",
                         "",
@@ -105,5 +71,4 @@ public class SwaggerConfig {
                 ))
                 .build();
     }
-
 }

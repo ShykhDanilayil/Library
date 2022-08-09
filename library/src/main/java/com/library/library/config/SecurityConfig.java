@@ -27,6 +27,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final MyUserDetailsService userDetailsService;
     private final DataSource dataSource;
 
+    private static final String[] SWAGGER_WHITELIST = {
+            "/v2/api-docs/**",
+            "/webjars/**",
+            "/swagger-resources/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+    };
+
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.inMemoryAuthentication()
@@ -45,10 +53,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/admin/**").hasRole(Role.ADMIN.toString())
                 .antMatchers("/librarian/**", "/authors/**", "/books/**").hasAnyRole(Role.LIBRARIAN.toString(), Role.ADMIN.toString())
                 .antMatchers("/registration", "/libraries/**", "/actuator/**").permitAll()
+                .antMatchers(SWAGGER_WHITELIST).permitAll()
                 .anyRequest().authenticated()
-                .and()
-                .formLogin()
-                .defaultSuccessUrl("/libraries");
+                .and().httpBasic()
+                .and().formLogin().defaultSuccessUrl("/libraries");
     }
 
     @Bean

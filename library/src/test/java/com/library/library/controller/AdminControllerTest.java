@@ -33,7 +33,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WithMockUser(roles = "ADMIN")
@@ -94,8 +93,7 @@ public class AdminControllerTest {
                 .content(objectMapper.writeValueAsString(userDto))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("http://localhost/login"));
+                .andExpect(status().isUnauthorized());
 
         verify(userService, never()).isEmailAlreadyInUse(any());
         verify(libraryService, never()).isEmailAlreadyInUse(any());
@@ -151,8 +149,7 @@ public class AdminControllerTest {
     void deleteUserTestNotAuthorized() throws Exception {
         mockMvc.perform(delete("/admin/users/" + userDto.getEmail()))
                 .andDo(print())
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("http://localhost/login"));
+                .andExpect(status().isUnauthorized());
 
         verify(userService, never()).isEmailAlreadyInUse(userDto.getEmail());
         verify(userService, never()).deleteUser(userDto.getEmail());

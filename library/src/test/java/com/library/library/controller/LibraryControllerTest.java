@@ -49,7 +49,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(value = LibraryController.class)
@@ -192,8 +191,7 @@ public class LibraryControllerTest {
                 .param("libraryName", libraryDto.getName())
                 .param("email", userDto.getEmail()))
                 .andDo(print())
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("http://localhost/login"));
+                .andExpect(status().isUnauthorized());
 
         verify(libraryService, never()).isNameAlreadyInUse(libraryDto.getName());
         verify(userService, never()).isEmailAlreadyInUse(userDto.getEmail());
@@ -343,8 +341,7 @@ public class LibraryControllerTest {
                 .param("bookTitle", bookDto.getTitle())
                 .param("libraryName", libraryDto.getName()))
                 .andDo(print())
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("http://localhost/login"));
+                .andExpect(status().isUnauthorized());
 
         verify(userService, never()).isEmailAlreadyInUse(anyString());
         verify(bookService, never()).isExistBookTitle(anyString());
@@ -477,8 +474,7 @@ public class LibraryControllerTest {
                 .param("bookTitle", bookDto.getTitle())
                 .param("libraryName", libraryDto.getName()))
                 .andDo(print())
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("http://localhost/login"));
+                .andExpect(status().isUnauthorized());
 
         verify(userService, never()).isEmailAlreadyInUse(anyString());
         verify(bookService, never()).isExistBookTitle(anyString());
@@ -573,8 +569,7 @@ public class LibraryControllerTest {
                 .param("bookTitle", bookDto.getTitle())
                 .param("libraryName", libraryDto.getName()))
                 .andDo(print())
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("http://localhost/login"));
+                .andExpect(status().isUnauthorized());
 
         verify(userService, never()).isEmailAlreadyInUse(anyString());
         verify(bookService, never()).isExistBookTitle(anyString());

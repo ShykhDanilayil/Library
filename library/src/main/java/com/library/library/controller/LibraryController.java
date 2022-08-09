@@ -7,10 +7,8 @@ import com.library.library.controller.validation.IsEmailUser;
 import com.library.library.controller.validation.IsNameLibrary;
 import com.library.library.controller.validation.IsTitleBook;
 import com.library.library.service.LibraryService;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -35,11 +33,6 @@ import java.util.Set;
 @RestController
 @RequestMapping("/libraries")
 @RequiredArgsConstructor
-@Api(tags = "API description for SWAGGER documentation")
-@ApiResponses({
-        @ApiResponse(code = 404, message = "Not found"),
-        @ApiResponse(code = 500, message = "Internal Server Error")
-})
 public class LibraryController {
 
     private final LibraryService libraryService;
@@ -58,7 +51,7 @@ public class LibraryController {
         return libraryService.getLibrary(name);
     }
 
-    @ApiOperation("Library add user")
+    @ApiOperation(value = "Library add user (USER, LIBRARIAN)", authorizations = {@Authorization(value = "basicAuth")})
     @PreAuthorize("hasAnyRole('USER','LIBRARIAN')")
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/users")
@@ -80,7 +73,7 @@ public class LibraryController {
         return libraryService.getAllBooks(libraryName);
     }
 
-    @ApiOperation("Reserved book")
+    @ApiOperation(value = "Reserved book (USER)", authorizations = {@Authorization(value = "basicAuth")})
     @PreAuthorize("hasAnyRole('USER')")
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/reserve")
@@ -88,7 +81,7 @@ public class LibraryController {
         libraryService.reserveBook(bookTitle, userEmail, libraryName);
     }
 
-    @ApiOperation("Borrow book")
+    @ApiOperation(value = "Borrow book (USER)", authorizations = {@Authorization(value = "basicAuth")})
     @PreAuthorize("hasAnyRole('USER')")
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/borrow")
@@ -96,7 +89,7 @@ public class LibraryController {
         libraryService.borrowBook(bookTitle, principal.getName(), libraryName);
     }
 
-    @ApiOperation("Return book")
+    @ApiOperation(value = "Return book (USER)", authorizations = {@Authorization(value = "basicAuth")})
     @PreAuthorize("hasAnyRole('USER')")
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/return")

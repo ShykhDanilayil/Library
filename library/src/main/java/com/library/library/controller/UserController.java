@@ -4,9 +4,8 @@ import com.library.library.controller.dto.UserDto;
 import com.library.library.controller.validation.EmailValid;
 import com.library.library.controller.validation.IsEmailUser;
 import com.library.library.service.UserService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.Authorization;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,25 +19,22 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Validated
 @RestController
-@RequestMapping
+@RequestMapping("/users")
 @RequiredArgsConstructor
-@Api(tags = "API description for SWAGGER documentation")
-@ApiResponses({
-        @ApiResponse(code = 404, message = "Not found"),
-        @ApiResponse(code = 500, message = "Internal Server Error")
-})
 public class UserController {
 
     private final UserService userService;
 
+    @ApiOperation(value = "Get users page", authorizations = {@Authorization(value = "basicAuth")})
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping("/users")
+    @GetMapping
     public Page<UserDto> getAllUsers(Pageable pageable) {
         return userService.pageUsers(pageable);
     }
 
+    @ApiOperation(value = "Get user", authorizations = {@Authorization(value = "basicAuth")})
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping(value = "/users/{email}")
+    @GetMapping(value = "/{email}")
     public UserDto getUser(@PathVariable @EmailValid @IsEmailUser String email) {
         return userService.getUser(email);
     }

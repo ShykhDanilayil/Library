@@ -43,7 +43,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WithMockUser(username = "librarian", roles = "LIBRARIAN", password = "librarian")
@@ -139,8 +138,7 @@ public class LibrarianControllerTest {
                 .content(objectMapper.writeValueAsString(libraryDto))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("http://localhost/login"));
+                .andExpect(status().isUnauthorized());
 
         verify(libraryService, never()).isNameAlreadyInUse(libraryDto.getName());
         verify(userService, never()).isEmailAlreadyInUse(userDto.getEmail());
@@ -319,8 +317,7 @@ public class LibrarianControllerTest {
                 .param("bookTitle", bookDto.getTitle())
                 .param("libraryName", libraryDto.getName()))
                 .andDo(print())
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("http://localhost/login"));
+                .andExpect(status().isUnauthorized());
 
         verify(userService, never()).isEmailAlreadyInUse(anyString());
         verify(bookService, never()).isExistBookTitle(anyString());
@@ -347,7 +344,7 @@ public class LibrarianControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void reserveBookControlLibNameExceptionTest() throws Exception {
-        String message = "reserveBook.libraryName: This library name doesn't exists!";
+        String message = "reserveBookControl.libraryName: This library name doesn't exists!";
         when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
         when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
         when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(false);
@@ -369,7 +366,7 @@ public class LibrarianControllerTest {
 
     @Test
     void reserveBookControlTitleExceptionTest() throws Exception {
-        String message = "reserveBook.bookTitle: This book title doesn't exists!";
+        String message = "reserveBookControl.bookTitle: This book title doesn't exists!";
         when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
         when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(false);
         when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
@@ -391,7 +388,7 @@ public class LibrarianControllerTest {
 
     @Test
     void reserveBookControlUserEmailExceptionTest() throws Exception {
-        String message = "reserveBook.userEmail: This email doesn't exists!";
+        String message = "reserveBookControl.userEmail: This email doesn't exists!";
         when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(false);
         when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
         when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
@@ -489,8 +486,7 @@ public class LibrarianControllerTest {
                 .param("bookTitle", bookDto.getTitle())
                 .param("libraryName", libraryDto.getName()))
                 .andDo(print())
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("http://localhost/login"));
+                .andExpect(status().isUnauthorized());
 
         verify(userService, never()).isEmailAlreadyInUse(anyString());
         verify(bookService, never()).isExistBookTitle(anyString());
@@ -634,8 +630,7 @@ public class LibrarianControllerTest {
                 .param("bookTitle", bookDto.getTitle())
                 .param("libraryName", libraryDto.getName()))
                 .andDo(print())
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("http://localhost/login"));
+                .andExpect(status().isUnauthorized());
 
         verify(userService, never()).isEmailAlreadyInUse(anyString());
         verify(bookService, never()).isExistBookTitle(anyString());

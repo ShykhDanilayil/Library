@@ -6,10 +6,8 @@ import com.library.library.controller.validation.IsEmailUser;
 import com.library.library.controller.validation.IsNameLibrary;
 import com.library.library.controller.validation.IsTitleBook;
 import com.library.library.service.LibraryService;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,51 +27,46 @@ import javax.validation.Valid;
 @RestController
 @RequestMapping("/librarian/libraries")
 @RequiredArgsConstructor
-@Api(tags = "API description for SWAGGER documentation")
-@ApiResponses({
-        @ApiResponse(code = 404, message = "Not found"),
-        @ApiResponse(code = 500, message = "Internal Server Error")
-})
 public class LibrarianController {
 
     private final LibraryService libraryService;
 
-    @ApiOperation("Create Library")
+    @ApiOperation(value = "Create Library", authorizations = {@Authorization(value = "basicAuth")})
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping()
     public LibraryDto createLibrary(@RequestBody @Valid LibraryDto libraryDto) {
         return libraryService.createLibrary(libraryDto);
     }
 
-    @ApiOperation("Delete library")
+    @ApiOperation(value = "Delete library", authorizations = {@Authorization(value = "basicAuth")})
     @DeleteMapping(value = "/{name}")
     public ResponseEntity<Void> deleteLibrary(@PathVariable @IsNameLibrary String name) {
         libraryService.deleteLibrary(name);
         return ResponseEntity.noContent().build();
     }
 
-    @ApiOperation("Library add book")
+    @ApiOperation(value = "Library add book", authorizations = {@Authorization(value = "basicAuth")})
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/books")
     public LibraryDto addBook(@RequestParam @IsNameLibrary String libraryName, @RequestParam @IsTitleBook String bookTitle) {
         return libraryService.addBook(libraryName, bookTitle);
     }
 
-    @ApiOperation("Reserved book")
+    @ApiOperation(value = "Reserved book", authorizations = {@Authorization(value = "basicAuth")})
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/reserve")
     public void reserveBookControl(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName) {
         libraryService.reserveBook(bookTitle, userEmail, libraryName);
     }
 
-    @ApiOperation("Borrow book")
+    @ApiOperation(value = "Borrow book", authorizations = {@Authorization(value = "basicAuth")})
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/borrow")
     public void borrowBookControl(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName) {
         libraryService.borrowBook(bookTitle, userEmail, libraryName);
     }
 
-    @ApiOperation("Return book")
+    @ApiOperation(value = "Return book", authorizations = {@Authorization(value = "basicAuth")})
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/return")
     public void returnBookControl(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName) throws Exception {
