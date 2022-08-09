@@ -21,7 +21,7 @@ import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -51,7 +51,11 @@ public class SwaggerConfig {
         return new LinkDiscoverers(SimplePluginRegistry.create(plugins));
     }
 
-    private final List<ResponseMessage> responseMessages = Collections.singletonList(
+    private final List<ResponseMessage> responseMessages = Arrays.asList(
+            new ResponseMessageBuilder().code(400).message("Bad Request").build(),
+            new ResponseMessageBuilder().code(401).message("Unauthorized").build(),
+            new ResponseMessageBuilder().code(403).message("Forbidden").build(),
+            new ResponseMessageBuilder().code(404).message("Not Found").build(),
             new ResponseMessageBuilder().code(500).message("Internal Server Error").build());
 
     private List<SecurityScheme> basicScheme() {
