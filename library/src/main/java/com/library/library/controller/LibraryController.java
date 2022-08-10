@@ -77,8 +77,8 @@ public class LibraryController {
     @PreAuthorize("hasAnyRole('USER')")
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/reserve")
-    public void reserveBook(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam String libraryName) {
-        libraryService.reserveBook(bookTitle, userEmail, libraryName);
+    public void reserveBook(@RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName, Authentication authentication) {
+        libraryService.reserveBook(bookTitle, authentication.getName(), libraryName);
     }
 
     @ApiOperation(value = "Borrow book (USER)", authorizations = {@Authorization(value = "basicAuth")})
