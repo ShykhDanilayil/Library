@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
 
 @Documented
 @Constraint(validatedBy = IsNickNameValidator.class)
-@Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER})
+@Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface IsNickName {
 
