@@ -1,9 +1,8 @@
 package com.library.library.controller.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.library.library.controller.validation.EmailValid;
 import com.library.library.controller.validation.PasswordValid;
+import com.library.library.controller.validation.PatchGroup;
 import com.library.library.controller.validation.PhoneNumberValid;
 import com.library.library.controller.validation.PostalCodeValid;
 import com.library.library.controller.validation.UniqueEmail;
@@ -14,35 +13,40 @@ import org.springframework.format.annotation.DateTimeFormat;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Past;
+import javax.validation.groups.Default;
 import java.util.Date;
 
 @Data
 @Builder
 public class UserDto {
 
-    @NotEmpty
+    @NotEmpty(message = "Firstname may not be empty")
     private String firstName;
-    @NotEmpty
+    @NotEmpty(message = "Lastname may not be empty")
     private String lastName;
     @UniqueEmail
-    @EmailValid
+    @EmailValid(groups = {PatchGroup.class, Default.class})
+    @NotEmpty(message = "Email address may not be empty")
     private String email;
-    @PasswordValid
+    @PasswordValid(groups = {PatchGroup.class, Default.class})
+    @NotEmpty(message = "Please enter password")
     private String password;
     private Role role;
     private boolean isAccountNonLocked;
-    @PhoneNumberValid
+    @PhoneNumberValid(groups = {PatchGroup.class, Default.class})
+    @NotEmpty(message = "Phone number may not be empty")
     private String phone;
     @DateTimeFormat(pattern = "dd/MM/yyyy")
-    @Past
-    @NotNull
+    @Past(groups = {PatchGroup.class, Default.class})
+    @NotNull(message = "Date birthday may not be null")
     private Date birthday;
-    @NotEmpty
+    @NotEmpty(message = "Country name may not be empty")
     private String country;
-    @NotEmpty
+    @NotEmpty(message = "City name may not be empty")
     private String city;
-    @NotEmpty
+    @NotEmpty(message = "Address may not be empty")
     private String address;
-    @PostalCodeValid
+    @NotEmpty(message = "Postal code may not be empty")
+    @PostalCodeValid(groups = {PatchGroup.class, Default.class})
     private String postalCode;
 }

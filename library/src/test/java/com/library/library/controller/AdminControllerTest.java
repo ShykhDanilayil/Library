@@ -29,6 +29,7 @@ import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -120,6 +121,76 @@ public class AdminControllerTest {
     @WithMockUser(roles = "LIBRARIAN")
     void updateUserTestRoleLibrarian() throws Exception {
         mockMvc.perform(put("/admin/users/" + userDto.getEmail())
+                .content(objectMapper.writeValueAsString(userDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+
+        verify(userService, never()).isEmailAlreadyInUse(any());
+        verify(libraryService, never()).isEmailAlreadyInUse(any());
+        verify(userService, never()).isEmailAlreadyInUse(any());
+        verify(userService, never()).updateUser(any(), any());
+    }
+
+    @Test
+    void partialUpdateUserTest() throws Exception {
+        String oldEmail = userDto.getEmail();
+        String newEmail = "newEmail@test.com";
+        UserDto newUserDto = UserDto.builder().email(newEmail).isAccountNonLocked(false).build();
+        userDto.setEmail(newUserDto.getEmail());
+        userDto.setAccountNonLocked(newUserDto.isAccountNonLocked());
+
+        when(userService.isEmailAlreadyInUse(oldEmail)).thenReturn(true);
+        when(libraryService.isEmailAlreadyInUse(newEmail)).thenReturn(false);
+        when(userService.isEmailAlreadyInUse(newEmail)).thenReturn(false);
+        when(userService.updateUser(oldEmail, newUserDto)).thenReturn(userDto);
+
+        mockMvc.perform(patch("/admin/users/" + oldEmail)
+                .content(objectMapper.writeValueAsString(newUserDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.firstName").value(userDto.getFirstName()))
+                .andExpect(jsonPath("$.lastName").value(userDto.getLastName()))
+                .andExpect(jsonPath("$.email").value(userDto.getEmail()))
+                .andExpect(jsonPath("$.accountNonLocked").value(userDto.isAccountNonLocked()));
+    }
+
+    @Test
+    @WithAnonymousUser
+    void partialUpdateUserTestNotAuthorized() throws Exception {
+        mockMvc.perform(patch("/admin/users/" + userDto.getEmail())
+                .content(objectMapper.writeValueAsString(userDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+
+        verify(userService, never()).isEmailAlreadyInUse(any());
+        verify(libraryService, never()).isEmailAlreadyInUse(any());
+        verify(userService, never()).isEmailAlreadyInUse(any());
+        verify(userService, never()).updateUser(any(), any());
+    }
+
+    @Test
+    @WithMockUser
+    void partialUpdateUserTestRoleUser() throws Exception {
+        mockMvc.perform(patch("/admin/users/" + userDto.getEmail())
+                .content(objectMapper.writeValueAsString(userDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+
+        verify(userService, never()).isEmailAlreadyInUse(any());
+        verify(libraryService, never()).isEmailAlreadyInUse(any());
+        verify(userService, never()).isEmailAlreadyInUse(any());
+        verify(userService, never()).updateUser(any(), any());
+    }
+
+    @Test
+    @WithMockUser(roles = "LIBRARIAN")
+    void partialUpdateUserTestRoleLibrarian() throws Exception {
+        mockMvc.perform(patch("/admin/users/" + userDto.getEmail())
                 .content(objectMapper.writeValueAsString(userDto))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())

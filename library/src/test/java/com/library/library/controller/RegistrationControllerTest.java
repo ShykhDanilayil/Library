@@ -99,7 +99,7 @@ public class RegistrationControllerTest {
 
     @Test
     void createUserInvalidPasswordNullTest() throws Exception {
-        String message = "Incorrect password format! It should contains at least one digit, one upper case or lower case letter and min length 6 symbols";
+        String message = "Please enter password";
         userDto.setPassword(null);
         when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(false);
         when(libraryService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(false);
@@ -141,7 +141,7 @@ public class RegistrationControllerTest {
 
     @Test
     void createUserInvalidEmailNullTest() throws Exception {
-        String message = "Incorrect email format!";
+        String message = "Email address may not be empty";
         userDto.setEmail(null);
         when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(false);
         when(libraryService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(false);
@@ -183,7 +183,7 @@ public class RegistrationControllerTest {
 
     @Test
     void createUserInvalidPostalCodeNullTest() throws Exception {
-        String message = "Incorrect postal code format!";
+        String message = "Postal code may not be empty";
         userDto.setPostalCode(null);
         when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(false);
         when(libraryService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(false);
@@ -225,7 +225,7 @@ public class RegistrationControllerTest {
 
     @Test
     void createUserInvalidPhoneNumberNullTest() throws Exception {
-        String message = "Incorrect phone number format!";
+        String message = "Phone number may not be empty";
         userDto.setPhone(null);
         when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(false);
         when(libraryService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(false);
