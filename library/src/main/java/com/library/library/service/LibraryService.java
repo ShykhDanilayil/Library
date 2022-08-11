@@ -5,6 +5,7 @@ import com.library.library.controller.dto.LibraryDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Set;
 
 public interface LibraryService {
@@ -33,5 +34,5 @@ public interface LibraryService {
 
     void borrowBook(String bookTitle, String userEmail, String libraryName);
 
-    void returnBook(String bookTitle, String userEmail, String libraryName);
+    void returnBook(String bookTitle, String userEmail, String libraryName, HttpServletRequest request);
 }

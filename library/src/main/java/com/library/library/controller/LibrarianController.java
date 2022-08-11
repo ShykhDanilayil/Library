@@ -70,6 +70,6 @@ public class LibrarianController {
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/return")
     public void returnBookControl(@RequestParam @EmailValid @IsEmailUser String userEmail, @RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName) throws Exception {
-        libraryService.returnBook(bookTitle, userEmail, libraryName);
+        libraryService.returnBook(bookTitle, userEmail, libraryName, null);
     }
 }

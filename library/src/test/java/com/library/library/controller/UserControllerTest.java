@@ -3,7 +3,7 @@ package com.library.library.controller;
 import com.library.library.config.TestWebConfig;
 import com.library.library.controller.dto.UserDto;
 import com.library.library.service.UserService;
-import com.library.library.service.impl.MyUserDetailsService;
+import com.library.library.service.impl.UserDetailsServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -49,7 +49,7 @@ public class UserControllerTest {
     private UserService userService;
 
     @MockBean
-    private MyUserDetailsService myUserDetailsService;
+    private UserDetailsServiceImpl userDetailsServiceImpl;
 
     @MockBean
     private DataSource dataSource;

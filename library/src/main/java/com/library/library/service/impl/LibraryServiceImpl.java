@@ -26,9 +26,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
@@ -157,7 +159,11 @@ public class LibraryServiceImpl implements LibraryService {
     public void reserveBook(String bookTitle, String userEmail, String libraryName) {
         log.info("User with email {} reserve book with title {} in library {}", userEmail, bookTitle, libraryName);
         User user = userRepo.findUserByEmail(userEmail);
-        if (borrowedRepo.existsBorrowedByUser(user) || !user.isAccountNonLocked()) {
+        if (reservedRepo.existsReservedByUser(user)) {
+            log.error("User with email {} already had a book reserved", userEmail);
+            throw new ReservedException(format("User with email %s already had a book reserved", userEmail));
+        }
+        if (borrowedRepo.existsBorrowedByUser(user)) {
             log.error("User with email {} didn't return the last book", userEmail);
             throw new ReservedException(format("User with email %s didn't return the last book", userEmail));
         }
@@ -185,8 +191,11 @@ public class LibraryServiceImpl implements LibraryService {
     }
 
     @Override
-    @Transactional
-    public void returnBook(String bookTitle, String userEmail, String libraryName) {
+    public void returnBook(String bookTitle, String userEmail, String libraryName, HttpServletRequest request) {
+        returnBooktoLib(bookTitle, userEmail, libraryName, request);
+    }
+
+    private void returnBooktoLib(String bookTitle, String userEmail, String libraryName, HttpServletRequest request) {
         log.info("User with email {} return book with title {} in library {}", userEmail, bookTitle, libraryName);
         User user = userRepo.findUserByEmail(userEmail);
         Library library = libraryRepo.findLibraryByLibraryName(libraryName);
@@ -197,15 +206,24 @@ public class LibraryServiceImpl implements LibraryService {
         borrowedRepo.delete(borrowed);
         log.info("Book with title {} successfully returned to library {}", bookTitle, libraryName);
 
+        addUserPenalty(borrowed.getDueDate(), book, library, user, request);
+    }
+
+    private void addUserPenalty(Date dueDate, Book book, Library library, User user, HttpServletRequest request) {
         Calendar calendar = Calendar.getInstance();
         Date currentDate = calendar.getTime();
-        if (currentDate.after(borrowed.getDueDate())) {
-            BookPenalty penalty = new BookPenalty(borrowed.getDueDate(), currentDate, book, library, user);
+        if (currentDate.after(dueDate)) {
+            BookPenalty penalty = new BookPenalty(dueDate, currentDate, book, library, user);
             penaltyRepo.save(penalty);
             if (penaltyRepo.countAllByUser(user) >= 5) {
-                user.setAccountNonLocked(false);
+                user.setIsAccountNonLocked(false);
+                userRepo.save(user);
+                if (Objects.nonNull(request)) {
+                    new SecurityContextLogoutHandler().logout(request, null, null);
+                }
+                log.info("User with email {} has been locked account", user.getEmail());
             }
-            log.info("User with email {} gets fined", userEmail);
+            log.info("User with email {} gets fined", user.getEmail());
         }
     }
 

@@ -10,7 +10,7 @@ import com.library.library.service.UserService;
 import com.library.library.service.exception.BookNotAvailableException;
 import com.library.library.service.exception.EntityNotFoundException;
 import com.library.library.service.exception.ReservedException;
-import com.library.library.service.impl.MyUserDetailsService;
+import com.library.library.service.impl.UserDetailsServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -26,6 +26,7 @@ import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -37,6 +38,8 @@ import java.util.Locale;
 import static java.lang.String.format;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -69,7 +72,7 @@ public class LibraryControllerTest {
     private BookService bookService;
 
     @MockBean
-    private MyUserDetailsService myUserDetailsService;
+    private UserDetailsServiceImpl userDetailsServiceImpl;
 
     @MockBean
     private DataSource dataSource;
@@ -547,7 +550,7 @@ public class LibraryControllerTest {
     void returnBookTest() throws Exception {
         when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
         when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
-        doNothing().when(libraryService).returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+        doNothing().when(libraryService).returnBook(eq(bookDto.getTitle()), eq(userDto.getEmail()), eq(libraryDto.getName()), isA(HttpServletRequest.class));
 
         mockMvc.perform(post("/libraries/return")
                 .param("userEmail", userDto.getEmail())
@@ -558,7 +561,7 @@ public class LibraryControllerTest {
 
         verify(bookService).isExistBookTitle(bookDto.getTitle());
         verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
-        verify(libraryService).returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+        verify(libraryService).returnBook(eq(bookDto.getTitle()), eq(userDto.getEmail()), eq(libraryDto.getName()), isA(HttpServletRequest.class));
     }
 
     @Test
@@ -574,7 +577,7 @@ public class LibraryControllerTest {
         verify(userService, never()).isEmailAlreadyInUse(anyString());
         verify(bookService, never()).isExistBookTitle(anyString());
         verify(libraryService, never()).isNameAlreadyInUse(anyString());
-        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString());
+        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString(), any());
     }
 
     @Test
@@ -590,7 +593,7 @@ public class LibraryControllerTest {
         verify(userService, never()).isEmailAlreadyInUse(anyString());
         verify(bookService, never()).isExistBookTitle(anyString());
         verify(libraryService, never()).isNameAlreadyInUse(anyString());
-        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString());
+        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString(), any());
     }
 
     @Test
@@ -606,7 +609,7 @@ public class LibraryControllerTest {
         verify(userService, never()).isEmailAlreadyInUse(anyString());
         verify(bookService, never()).isExistBookTitle(anyString());
         verify(libraryService, never()).isNameAlreadyInUse(anyString());
-        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString());
+        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString(), any());
     }
 
     @Test
@@ -627,7 +630,7 @@ public class LibraryControllerTest {
 
         verify(bookService).isExistBookTitle(bookDto.getTitle());
         verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
-        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString());
+        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString(), any());
     }
 
     private LibraryDto getLibraryDto() {

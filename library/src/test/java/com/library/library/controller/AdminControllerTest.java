@@ -5,7 +5,7 @@ import com.library.library.config.TestWebConfig;
 import com.library.library.controller.dto.UserDto;
 import com.library.library.service.LibraryService;
 import com.library.library.service.UserService;
-import com.library.library.service.impl.MyUserDetailsService;
+import com.library.library.service.impl.UserDetailsServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -55,7 +55,7 @@ public class AdminControllerTest {
     private LibraryService libraryService;
 
     @MockBean
-    private MyUserDetailsService myUserDetailsService;
+    private UserDetailsServiceImpl userDetailsServiceImpl;
 
     @MockBean
     private DataSource dataSource;
@@ -138,7 +138,7 @@ public class AdminControllerTest {
         String newEmail = "newEmail@test.com";
         UserDto newUserDto = UserDto.builder().email(newEmail).isAccountNonLocked(false).build();
         userDto.setEmail(newUserDto.getEmail());
-        userDto.setAccountNonLocked(newUserDto.isAccountNonLocked());
+        userDto.setIsAccountNonLocked(newUserDto.getIsAccountNonLocked());
 
         when(userService.isEmailAlreadyInUse(oldEmail)).thenReturn(true);
         when(libraryService.isEmailAlreadyInUse(newEmail)).thenReturn(false);
@@ -154,7 +154,7 @@ public class AdminControllerTest {
                 .andExpect(jsonPath("$.firstName").value(userDto.getFirstName()))
                 .andExpect(jsonPath("$.lastName").value(userDto.getLastName()))
                 .andExpect(jsonPath("$.email").value(userDto.getEmail()))
-                .andExpect(jsonPath("$.accountNonLocked").value(userDto.isAccountNonLocked()));
+                .andExpect(jsonPath("$.isAccountNonLocked").value(userDto.getIsAccountNonLocked()));
     }
 
     @Test

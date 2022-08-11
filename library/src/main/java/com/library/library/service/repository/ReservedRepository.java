@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface ReservedRepository extends JpaRepository<Reserved, Long> {
 
     Optional<Reserved> findByUserAndLibrary(User user, Library library);
+
+    boolean existsReservedByUser(User user);
 }

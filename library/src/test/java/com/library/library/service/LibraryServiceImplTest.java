@@ -25,6 +25,8 @@ import com.library.library.service.repository.BorrowedRepository;
 import com.library.library.service.repository.LibraryRepository;
 import com.library.library.service.repository.ReservedRepository;
 import com.library.library.service.repository.UserRepository;
+import org.apache.catalina.connector.Connector;
+import org.apache.catalina.connector.Request;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -267,9 +269,10 @@ public class LibraryServiceImplTest {
     @Test
     void reserveBookTest() {
         library.setBooks(Collections.singleton(book));
-        user.setAccountNonLocked(true);
+        user.setIsAccountNonLocked(true);
         //given
         when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
+        when(reservedRepository.existsReservedByUser(user)).thenReturn(false);
         when(borrowedRepository.existsBorrowedByUser(user)).thenReturn(false);
         when(libraryRepository.findLibraryByLibraryName(libraryDto.getName())).thenReturn(library);
         when(reservedRepository.save(isA(Reserved.class))).thenReturn(new Reserved());
@@ -279,6 +282,7 @@ public class LibraryServiceImplTest {
 
         //then
         verify(userRepository, times(1)).findUserByEmail(userDto.getEmail());
+        verify(reservedRepository, times(1)).existsReservedByUser(user);
         verify(borrowedRepository, times(1)).existsBorrowedByUser(user);
         verify(libraryRepository, times(1)).findLibraryByLibraryName(libraryDto.getName());
         verify(reservedRepository, times(1)).save(isA(Reserved.class));
@@ -288,9 +292,10 @@ public class LibraryServiceImplTest {
     void reserveBookNotAvailableExceptionTest() {
         book.setStatus(BookStatus.RESERVED);
         library.setBooks(Collections.singleton(book));
-        user.setAccountNonLocked(true);
+        user.setIsAccountNonLocked(true);
         //given
         when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
+        when(reservedRepository.existsReservedByUser(user)).thenReturn(false);
         when(borrowedRepository.existsBorrowedByUser(user)).thenReturn(false);
         when(libraryRepository.findLibraryByLibraryName(libraryDto.getName())).thenReturn(library);
 
@@ -300,8 +305,30 @@ public class LibraryServiceImplTest {
 
         //then
         verify(userRepository, times(1)).findUserByEmail(userDto.getEmail());
+        verify(reservedRepository, times(1)).existsReservedByUser(user);
         verify(borrowedRepository, times(1)).existsBorrowedByUser(user);
         verify(libraryRepository, times(1)).findLibraryByLibraryName(libraryDto.getName());
+        verify(reservedRepository, never()).save(any());
+    }
+
+    @Test
+    void reserveBookReservedExceptionTest() {
+        book.setStatus(BookStatus.RESERVED);
+        library.setBooks(Collections.singleton(book));
+        user.setIsAccountNonLocked(true);
+        //given
+        when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
+        when(reservedRepository.existsReservedByUser(user)).thenReturn(true);
+
+        //when
+        assertThrows(ReservedException.class,
+                () -> libraryService.reserveBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName()));
+
+        //then
+        verify(userRepository, times(1)).findUserByEmail(userDto.getEmail());
+        verify(reservedRepository, times(1)).existsReservedByUser(user);
+        verify(borrowedRepository, never()).existsBorrowedByUser(any());
+        verify(libraryRepository, never()).findLibraryByLibraryName(any());
         verify(reservedRepository, never()).save(any());
     }
 
@@ -309,6 +336,7 @@ public class LibraryServiceImplTest {
     void reserveBookExceptionTest() {
         //given
         when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
+        when(reservedRepository.existsReservedByUser(user)).thenReturn(false);
         when(borrowedRepository.existsBorrowedByUser(user)).thenReturn(true);
 
         //when
@@ -317,24 +345,7 @@ public class LibraryServiceImplTest {
 
         //then
         verify(userRepository, times(1)).findUserByEmail(userDto.getEmail());
-        verify(borrowedRepository, times(1)).existsBorrowedByUser(user);
-        verify(libraryRepository, never()).findLibraryByLibraryName(any());
-        verify(reservedRepository, never()).save(any());
-    }
-
-    @Test
-    void reserveBookExceptionTestAccountLocked() {
-        //given
-        user.setAccountNonLocked(false);
-        when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
-        when(borrowedRepository.existsBorrowedByUser(user)).thenReturn(false);
-
-        //when
-        assertThrows(ReservedException.class,
-                () -> libraryService.reserveBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName()));
-
-        //then
-        verify(userRepository, times(1)).findUserByEmail(userDto.getEmail());
+        verify(reservedRepository, times(1)).existsReservedByUser(user);
         verify(borrowedRepository, times(1)).existsBorrowedByUser(user);
         verify(libraryRepository, never()).findLibraryByLibraryName(any());
         verify(reservedRepository, never()).save(any());
@@ -345,9 +356,10 @@ public class LibraryServiceImplTest {
         Book newBook = book;
         newBook.setTitle("new Title");
         library.setBooks(Collections.singleton(newBook));
-        user.setAccountNonLocked(true);
+        user.setIsAccountNonLocked(true);
         //given
         when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
+        when(reservedRepository.existsReservedByUser(user)).thenReturn(false);
         when(borrowedRepository.existsBorrowedByUser(user)).thenReturn(false);
         when(libraryRepository.findLibraryByLibraryName(libraryDto.getName())).thenReturn(library);
 
@@ -357,6 +369,7 @@ public class LibraryServiceImplTest {
 
         //then
         verify(userRepository).findUserByEmail(userDto.getEmail());
+        verify(reservedRepository, times(1)).existsReservedByUser(user);
         verify(borrowedRepository).existsBorrowedByUser(user);
         verify(libraryRepository).findLibraryByLibraryName(libraryDto.getName());
         verify(reservedRepository, never()).save(isA(Reserved.class));
@@ -410,7 +423,7 @@ public class LibraryServiceImplTest {
         doNothing().when(borrowedRepository).delete(isA(Borrowed.class));
 
         //when
-        libraryService.returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+        libraryService.returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName(), null);
 
         //then
         verify(userRepository, times(1)).findUserByEmail(userDto.getEmail());
@@ -429,10 +442,11 @@ public class LibraryServiceImplTest {
         when(libraryRepository.findLibraryByLibraryName(libraryDto.getName())).thenReturn(library);
         when(borrowedRepository.findBorrowedByUserAndLibrary(user, library)).thenReturn(Optional.of(borrowed));
         doNothing().when(borrowedRepository).delete(borrowed);
+        when(penaltyRepository.countAllByUser(user)).thenReturn(4);
         when(penaltyRepository.save(isA(BookPenalty.class))).thenReturn(new BookPenalty());
 
         //when
-        libraryService.returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+        libraryService.returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName(), null);
 
         //then
         verify(userRepository, times(1)).findUserByEmail(userDto.getEmail());
@@ -440,6 +454,56 @@ public class LibraryServiceImplTest {
         verify(borrowedRepository, times(1)).findBorrowedByUserAndLibrary(user, library);
         verify(borrowedRepository, times(1)).delete(borrowed);
         verify(penaltyRepository, times(1)).save(isA(BookPenalty.class));
+    }
+
+    @Test
+    void returnBookSetBlockTest() throws Exception {
+        Borrowed borrowed = getBorrowed();
+        borrowed.setDueDate(Calendar.getInstance().getTime());
+        //given
+        when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
+        when(libraryRepository.findLibraryByLibraryName(libraryDto.getName())).thenReturn(library);
+        when(borrowedRepository.findBorrowedByUserAndLibrary(user, library)).thenReturn(Optional.of(borrowed));
+        doNothing().when(borrowedRepository).delete(borrowed);
+        when(penaltyRepository.countAllByUser(user)).thenReturn(6);
+        when(penaltyRepository.save(isA(BookPenalty.class))).thenReturn(new BookPenalty());
+        when(userRepository.save(isA(User.class))).thenReturn(user);
+
+        //when
+        libraryService.returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName(), new Request(new Connector()));
+
+        //then
+        verify(userRepository, times(1)).findUserByEmail(userDto.getEmail());
+        verify(libraryRepository, times(1)).findLibraryByLibraryName(libraryDto.getName());
+        verify(borrowedRepository, times(1)).findBorrowedByUserAndLibrary(user, library);
+        verify(borrowedRepository, times(1)).delete(borrowed);
+        verify(penaltyRepository, times(1)).save(isA(BookPenalty.class));
+        verify(userRepository, times(1)).save(isA(User.class));
+    }
+
+    @Test
+    void returnBookSetBlockNullRequestTest() throws Exception {
+        Borrowed borrowed = getBorrowed();
+        borrowed.setDueDate(Calendar.getInstance().getTime());
+        //given
+        when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
+        when(libraryRepository.findLibraryByLibraryName(libraryDto.getName())).thenReturn(library);
+        when(borrowedRepository.findBorrowedByUserAndLibrary(user, library)).thenReturn(Optional.of(borrowed));
+        doNothing().when(borrowedRepository).delete(borrowed);
+        when(penaltyRepository.countAllByUser(user)).thenReturn(6);
+        when(penaltyRepository.save(isA(BookPenalty.class))).thenReturn(new BookPenalty());
+        when(userRepository.save(isA(User.class))).thenReturn(user);
+
+        //when
+        libraryService.returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName(), null);
+
+        //then
+        verify(userRepository, times(1)).findUserByEmail(userDto.getEmail());
+        verify(libraryRepository, times(1)).findLibraryByLibraryName(libraryDto.getName());
+        verify(borrowedRepository, times(1)).findBorrowedByUserAndLibrary(user, library);
+        verify(borrowedRepository, times(1)).delete(borrowed);
+        verify(penaltyRepository, times(1)).save(isA(BookPenalty.class));
+        verify(userRepository, times(1)).save(isA(User.class));
     }
 
     @Test
@@ -451,7 +515,7 @@ public class LibraryServiceImplTest {
 
         //when
         assertThrows(BorrowedException.class,
-                () -> libraryService.returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName()));
+                () -> libraryService.returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName(), null));
 
         //then
         verify(userRepository, times(1)).findUserByEmail(userDto.getEmail());

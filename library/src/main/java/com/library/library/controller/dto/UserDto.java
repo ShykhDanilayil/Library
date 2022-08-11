@@ -32,7 +32,7 @@ public class UserDto {
     @NotEmpty(message = "Please enter password")
     private String password;
     private Role role;
-    private boolean isAccountNonLocked;
+    private Boolean isAccountNonLocked;
     @PhoneNumberValid(groups = {PatchGroup.class, Default.class})
     @NotEmpty(message = "Phone number may not be empty")
     private String phone;

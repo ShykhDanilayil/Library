@@ -6,7 +6,7 @@ import com.library.library.controller.dto.AuthorDto;
 import com.library.library.controller.dto.BookDto;
 import com.library.library.service.AuthorService;
 import com.library.library.service.BookService;
-import com.library.library.service.impl.MyUserDetailsService;
+import com.library.library.service.impl.UserDetailsServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -57,7 +57,7 @@ public class BookControllerTest {
     private AuthorService authorService;
 
     @MockBean
-    private MyUserDetailsService myUserDetailsService;
+    private UserDetailsServiceImpl userDetailsServiceImpl;
 
     @MockBean
     private DataSource dataSource;

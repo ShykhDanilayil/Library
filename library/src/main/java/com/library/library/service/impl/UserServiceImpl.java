@@ -58,7 +58,7 @@ public class UserServiceImpl implements UserService {
         User user = UserMapper.INSTANCE.mapUser(userDto);
         user.setPassword(passwordEncoder.encode(userDto.getPassword()));
         user.setRole(Role.USER);
-        user.setAccountNonLocked(true);
+        user.setIsAccountNonLocked(true);
         user.setWrittenOn(Instant.now());
         userRepository.save(user);
         log.info("User with email {} successfully created", email);
@@ -96,6 +96,7 @@ public class UserServiceImpl implements UserService {
                 .email(user.getEmail())
                 .password(user.getPassword())
                 .role(user.getRole())
+                .isAccountNonLocked(user.getIsAccountNonLocked())
                 .phone(user.getPhone())
                 .birthday(user.getBirthday())
                 .country(user.getCountry())
@@ -121,8 +122,8 @@ public class UserServiceImpl implements UserService {
         if (Objects.nonNull(userDto.getRole())) {
             user.setRole(userDto.getRole());
         }
-        if (Objects.nonNull(userDto.isAccountNonLocked())) {
-            user.setAccountNonLocked(userDto.isAccountNonLocked());
+        if (Objects.nonNull(userDto.getIsAccountNonLocked())) {
+            user.setIsAccountNonLocked(userDto.getIsAccountNonLocked());
         }
         if (Objects.nonNull(userDto.getPhone())) {
             user.setPhone(userDto.getPhone());

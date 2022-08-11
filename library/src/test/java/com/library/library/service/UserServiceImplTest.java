@@ -86,7 +86,7 @@ public class UserServiceImplTest {
         //then
         List<UserDto> userDtos = Collections.singletonList(userDto);
         Page<UserDto> expectedPage = new PageImpl<>(userDtos, pageable, userDtos.size());
-        assertEquals(expectedPage, actualPage);
+        assertEquals(expectedPage.getContent(), actualPage.getContent());
     }
 
     @Test()
@@ -198,6 +198,25 @@ public class UserServiceImplTest {
     }
 
     @Test
+    public void updateUserAccountNonLockedTest() {
+        UserDto updateUserDto = userDto;
+        updateUserDto.setIsAccountNonLocked(null);
+        User updateUser = UserMapper.INSTANCE.mapUser(updateUserDto);
+        //given
+        when(userRepository.findUserByEmail(user.getEmail())).thenReturn(updateUser);
+        when(passwordEncoder.encode(userDto.getPassword())).thenReturn(userDto.getPassword());
+        when(userRepository.save(isA(User.class))).thenReturn(updateUser);
+
+        //when
+        UserDto actual = userService.updateUser(user.getEmail(), updateUserDto);
+
+        //then
+        assertEquals(updateUserDto, actual);
+        verify(userRepository).findUserByEmail(user.getEmail());
+        verify(userRepository).save(updateUser);
+    }
+
+    @Test
     void deleteUserTest() {
         //given
         when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
@@ -222,6 +241,7 @@ public class UserServiceImplTest {
                 .email("test@email.com")
                 .password("12345q")
                 .role(Role.USER)
+                .isAccountNonLocked(true)
                 .phone("0986555423")
                 .birthday(new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH).parse("7-Jun-1987"))
                 .country("English")

@@ -11,7 +11,7 @@ import com.library.library.service.UserService;
 import com.library.library.service.exception.BookNotAvailableException;
 import com.library.library.service.exception.BorrowedException;
 import com.library.library.service.exception.ReservedException;
-import com.library.library.service.impl.MyUserDetailsService;
+import com.library.library.service.impl.UserDetailsServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -67,7 +67,7 @@ public class LibrarianControllerTest {
     private BookService bookService;
 
     @MockBean
-    private MyUserDetailsService myUserDetailsService;
+    private UserDetailsServiceImpl userDetailsServiceImpl;
 
     @MockBean
     private DataSource dataSource;
@@ -607,7 +607,7 @@ public class LibrarianControllerTest {
         when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
         when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
         when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
-        doNothing().when(libraryService).returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+        doNothing().when(libraryService).returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName(), null);
 
         mockMvc.perform(post("/librarian/libraries/return")
                 .param("userEmail", userDto.getEmail())
@@ -619,7 +619,7 @@ public class LibrarianControllerTest {
         verify(userService).isEmailAlreadyInUse(userDto.getEmail());
         verify(bookService).isExistBookTitle(bookDto.getTitle());
         verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
-        verify(libraryService).returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+        verify(libraryService).returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName(), null);
     }
 
     @Test
@@ -635,7 +635,7 @@ public class LibrarianControllerTest {
         verify(userService, never()).isEmailAlreadyInUse(anyString());
         verify(bookService, never()).isExistBookTitle(anyString());
         verify(libraryService, never()).isNameAlreadyInUse(anyString());
-        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString());
+        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString(), any());
     }
 
     @Test
@@ -651,7 +651,7 @@ public class LibrarianControllerTest {
         verify(userService, never()).isEmailAlreadyInUse(anyString());
         verify(bookService, never()).isExistBookTitle(anyString());
         verify(libraryService, never()).isNameAlreadyInUse(anyString());
-        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString());
+        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString(), any());
     }
 
     @Test
@@ -674,7 +674,7 @@ public class LibrarianControllerTest {
         verify(userService).isEmailAlreadyInUse(userDto.getEmail());
         verify(bookService).isExistBookTitle(bookDto.getTitle());
         verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
-        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString());
+        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString(), any());
     }
 
     @Test
@@ -696,7 +696,7 @@ public class LibrarianControllerTest {
         verify(userService).isEmailAlreadyInUse(userDto.getEmail());
         verify(bookService).isExistBookTitle(bookDto.getTitle());
         verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
-        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString());
+        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString(), any());
     }
 
     @Test
@@ -718,7 +718,7 @@ public class LibrarianControllerTest {
         verify(userService).isEmailAlreadyInUse(userDto.getEmail());
         verify(bookService).isExistBookTitle(bookDto.getTitle());
         verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
-        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString());
+        verify(libraryService, never()).returnBook(anyString(), anyString(), anyString(), any());
     }
 
     @Test
@@ -728,7 +728,7 @@ public class LibrarianControllerTest {
         when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
         when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
         when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
-        doThrow(new BorrowedException(message)).when(libraryService).returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+        doThrow(new BorrowedException(message)).when(libraryService).returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName(), null);
 
         mockMvc.perform(post("/librarian/libraries/return")
                 .param("userEmail", userDto.getEmail())
@@ -741,7 +741,7 @@ public class LibrarianControllerTest {
         verify(userService).isEmailAlreadyInUse(userDto.getEmail());
         verify(bookService).isExistBookTitle(bookDto.getTitle());
         verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
-        verify(libraryService).returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+        verify(libraryService).returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName(), null);
     }
 
     private LibraryDto getLibraryDto() {

@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
 import java.util.Set;
 
@@ -93,7 +94,7 @@ public class LibraryController {
     @PreAuthorize("hasAnyRole('USER')")
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/return")
-    public void returnBook(@RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName, @AuthenticationPrincipal UserDetails activeUser) {
-        libraryService.returnBook(bookTitle, activeUser.getUsername(), libraryName);
+    public void returnBook(@RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName, @AuthenticationPrincipal UserDetails activeUser, HttpServletRequest request) {
+        libraryService.returnBook(bookTitle, activeUser.getUsername(), libraryName, request);
     }
 }

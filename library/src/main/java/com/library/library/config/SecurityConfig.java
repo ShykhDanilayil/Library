@@ -1,7 +1,7 @@
 package com.library.library.config;
 
 import com.library.library.controller.dto.Role;
-import com.library.library.service.impl.MyUserDetailsService;
+import com.library.library.service.impl.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,7 +24,7 @@ import javax.sql.DataSource;
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-    private final MyUserDetailsService userDetailsService;
+    private final UserDetailsServiceImpl userDetailsService;
     private final DataSource dataSource;
 
     private static final String[] SWAGGER_WHITELIST = {
