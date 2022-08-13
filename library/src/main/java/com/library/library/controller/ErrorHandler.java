@@ -3,6 +3,7 @@ package com.library.library.controller;
 import com.library.library.service.exception.BookNotAvailableException;
 import com.library.library.service.exception.BorrowedException;
 import com.library.library.service.exception.EntityNotFoundException;
+import com.library.library.service.exception.LibraryException;
 import com.library.library.service.exception.ReservedException;
 import com.library.library.service.exception.UserAlreadyExistsException;
 import lombok.extern.slf4j.Slf4j;
@@ -54,6 +55,13 @@ public class ErrorHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Error handleBookNotAvailableException(BookNotAvailableException ex) {
         log.error("handleBookNotAvailableException: exception {}", ex.getMessage(), ex);
+        return new Error(ex.getMessage());
+    }
+
+    @ExceptionHandler(LibraryException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Error handleLibraryException(LibraryException ex) {
+        log.error("handleLibraryException: exception {}", ex.getMessage(), ex);
         return new Error(ex.getMessage());
     }
 
