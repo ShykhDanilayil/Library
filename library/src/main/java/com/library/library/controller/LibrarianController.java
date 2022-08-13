@@ -5,6 +5,7 @@ import com.library.library.controller.validation.EmailValid;
 import com.library.library.controller.validation.IsEmailUser;
 import com.library.library.controller.validation.IsNameLibrary;
 import com.library.library.controller.validation.IsTitleBook;
+import com.library.library.controller.validation.PatchGroup;
 import com.library.library.service.LibraryService;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
@@ -13,8 +14,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -38,6 +41,20 @@ public class LibrarianController {
         return libraryService.createLibrary(libraryDto);
     }
 
+    @ApiOperation(value = "Update all fields library", authorizations = {@Authorization(value = "basicAuth")})
+    @ResponseStatus(HttpStatus.OK)
+    @PutMapping("/{name}")
+    public LibraryDto updateLibrary(@PathVariable @IsNameLibrary String name, @RequestBody @Valid LibraryDto newLibrary) {
+        return libraryService.updateLibrary(name, newLibrary);
+    }
+
+    @ApiOperation(value = "Partial update library", authorizations = {@Authorization(value = "basicAuth")})
+    @ResponseStatus(HttpStatus.OK)
+    @PatchMapping("/{name}")
+    public LibraryDto partialUpdateLibrary(@PathVariable @IsNameLibrary String name, @RequestBody @Validated(PatchGroup.class) LibraryDto newLibrary) {
+        return libraryService.updateLibrary(name, newLibrary);
+    }
+
     @ApiOperation(value = "Delete library", authorizations = {@Authorization(value = "basicAuth")})
     @DeleteMapping(value = "/{name}")
     public ResponseEntity<Void> deleteLibrary(@PathVariable @IsNameLibrary String name) {
@@ -50,6 +67,20 @@ public class LibrarianController {
     @PostMapping(value = "/books")
     public LibraryDto addBook(@RequestParam @IsNameLibrary String libraryName, @RequestParam @IsTitleBook String bookTitle) {
         return libraryService.addBook(libraryName, bookTitle);
+    }
+
+    @ApiOperation(value = "Library add user", authorizations = {@Authorization(value = "basicAuth")})
+    @ResponseStatus(HttpStatus.OK)
+    @PostMapping(value = "/users")
+    public void addUser(@RequestParam @IsNameLibrary String libraryName, @RequestParam @EmailValid @IsEmailUser String email) {
+        libraryService.addUser(libraryName, email);
+    }
+
+    @ApiOperation(value = "Library delete user", authorizations = {@Authorization(value = "basicAuth")})
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @DeleteMapping(value = "/users")
+    public void deleteUser(@RequestParam @IsNameLibrary String libraryName, @RequestParam @EmailValid @IsEmailUser String email) {
+        libraryService.deleteUser(libraryName, email);
     }
 
     @ApiOperation(value = "Reserved book", authorizations = {@Authorization(value = "basicAuth")})

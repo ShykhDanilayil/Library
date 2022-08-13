@@ -30,7 +30,7 @@ public class AdminController {
 
     private final UserService userService;
 
-    @ApiOperation(value = "Update all user", authorizations = {@Authorization(value = "basicAuth")})
+    @ApiOperation(value = "Update all fields user", authorizations = {@Authorization(value = "basicAuth")})
     @ResponseStatus(HttpStatus.OK)
     @PutMapping(value = "/users/{email}")
     public UserDto updateUser(@PathVariable @EmailValid @IsEmailUser String email, @RequestBody @Valid UserDto userDto) {

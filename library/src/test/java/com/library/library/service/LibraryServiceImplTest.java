@@ -8,6 +8,7 @@ import com.library.library.controller.dto.UserDto;
 import com.library.library.service.exception.BookNotAvailableException;
 import com.library.library.service.exception.BorrowedException;
 import com.library.library.service.exception.EntityNotFoundException;
+import com.library.library.service.exception.LibraryException;
 import com.library.library.service.exception.ReservedException;
 import com.library.library.service.impl.LibraryServiceImpl;
 import com.library.library.service.mapper.BookMapper;
@@ -98,6 +99,42 @@ public class LibraryServiceImplTest {
     }
 
     @Test
+    public void updateLibraryNameAndAddressAndPhoneTest() {
+        //given
+        when(libraryRepository.findLibraryByLibraryName(libraryDto.getName())).thenReturn(library);
+        when(libraryRepository.save(isA(Library.class))).thenReturn(library);
+
+        //when
+        LibraryDto actual = libraryService.updateLibrary(libraryDto.getName(), libraryDto);
+
+        //then
+        assertEquals(libraryDto, actual);
+    }
+
+    @Test
+    public void updateLibraryTest() {
+        LibraryDto updateLibDto = libraryDto;
+        updateLibDto.setName(null);
+        updateLibDto.setAddress(null);
+        updateLibDto.setPhone(null);
+        updateLibDto.setEmail("email@test.com");
+        updateLibDto.setCity("test");
+        updateLibDto.setCountry("test");
+        updateLibDto.setCountry("test");
+        updateLibDto.setPostalCode("12345");
+        Library updateLib = LibraryMapper.INSTANCE.mapLibrary(updateLibDto);
+        //given
+        when(libraryRepository.findLibraryByLibraryName(libraryDto.getName())).thenReturn(updateLib);
+        when(libraryRepository.save(isA(Library.class))).thenReturn(updateLib);
+
+        //when
+        LibraryDto actual = libraryService.updateLibrary(libraryDto.getName(), libraryDto);
+
+        //then
+        assertEquals(updateLibDto, actual);
+    }
+
+    @Test
     void getLibraryTest() {
         //given
         when(libraryRepository.findLibraryByLibraryName(library.getLibraryName())).thenReturn(library);
@@ -157,13 +194,62 @@ public class LibraryServiceImplTest {
 
     @Test
     void addUserTest() {
-        user.setLibraries(new ArrayList<>(Collections.singletonList(new Library())));
+        user.setLibraries(new ArrayList<>());
         //given
         when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
         when(libraryRepository.findLibraryByLibraryName(libraryDto.getName())).thenReturn(library);
 
         //when
         libraryService.addUser(libraryDto.getName(), userDto.getEmail());
+
+        //then
+        verify(userRepository, times(1)).findUserByEmail(userDto.getEmail());
+        verify(libraryRepository, times(1)).findLibraryByLibraryName(libraryDto.getName());
+    }
+
+    @Test
+    void addUserLibraryExceptionTest() {
+        user.setLibraries(Collections.singletonList(library));
+        library.setUsers(Collections.singletonList(user));
+        //given
+        when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
+        when(libraryRepository.findLibraryByLibraryName(libraryDto.getName())).thenReturn(library);
+
+        //when
+        assertThrows(LibraryException.class,
+                () -> libraryService.addUser(libraryDto.getName(), userDto.getEmail()));
+
+        //then
+        verify(userRepository, times(1)).findUserByEmail(userDto.getEmail());
+        verify(libraryRepository, times(1)).findLibraryByLibraryName(libraryDto.getName());
+    }
+
+    @Test
+    void deleteUserTest() {
+        user.setLibraries(new ArrayList<>(Collections.singletonList(library)));
+        library.setUsers(new ArrayList<>(Collections.singletonList(user)));
+        //given
+        when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
+        when(libraryRepository.findLibraryByLibraryName(libraryDto.getName())).thenReturn(library);
+
+        //when
+        libraryService.deleteUser(libraryDto.getName(), userDto.getEmail());
+
+        //then
+        verify(userRepository, times(1)).findUserByEmail(userDto.getEmail());
+        verify(libraryRepository, times(1)).findLibraryByLibraryName(libraryDto.getName());
+    }
+
+    @Test
+    void deleteUserLibraryExceptionTest() {
+        user.setLibraries(new ArrayList<>());
+        //given
+        when(userRepository.findUserByEmail(userDto.getEmail())).thenReturn(user);
+        when(libraryRepository.findLibraryByLibraryName(libraryDto.getName())).thenReturn(library);
+
+        //when
+        assertThrows(LibraryException.class,
+                () -> libraryService.deleteUser(libraryDto.getName(), userDto.getEmail()));
 
         //then
         verify(userRepository, times(1)).findUserByEmail(userDto.getEmail());
@@ -529,6 +615,7 @@ public class LibraryServiceImplTest {
         return LibraryDto.builder()
                 .name("TEST LIB")
                 .address("LVIV")
+                .phone("0934343436")
                 .build();
     }
 

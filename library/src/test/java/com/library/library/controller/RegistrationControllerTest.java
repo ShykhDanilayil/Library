@@ -23,6 +23,8 @@ import java.text.SimpleDateFormat;
 import java.util.Locale;
 
 import static java.lang.String.format;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -143,8 +145,6 @@ public class RegistrationControllerTest {
     void createUserInvalidEmailNullTest() throws Exception {
         String message = "Email address may not be empty";
         userDto.setEmail(null);
-        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(false);
-        when(libraryService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(false);
 
         mockMvc.perform(post("/registration")
                 .content(objectMapper.writeValueAsString(userDto))
@@ -154,9 +154,9 @@ public class RegistrationControllerTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$[0].message").value(message));
 
-        verify(userService).isEmailAlreadyInUse(userDto.getEmail());
-        verify(libraryService).isEmailAlreadyInUse(userDto.getEmail());
-        verify(userService, never()).createUser(userDto);
+        verify(userService, never()).isEmailAlreadyInUse(anyString());
+        verify(libraryService, never()).isEmailAlreadyInUse(anyString());
+        verify(userService, never()).createUser(any());
         userDto.setEmail("test@email.com");
     }
 

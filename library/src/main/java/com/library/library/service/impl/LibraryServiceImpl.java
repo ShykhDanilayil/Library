@@ -7,6 +7,7 @@ import com.library.library.service.LibraryService;
 import com.library.library.service.exception.BookNotAvailableException;
 import com.library.library.service.exception.BorrowedException;
 import com.library.library.service.exception.EntityNotFoundException;
+import com.library.library.service.exception.LibraryException;
 import com.library.library.service.exception.ReservedException;
 import com.library.library.service.mapper.BookMapper;
 import com.library.library.service.mapper.LibraryMapper;
@@ -68,6 +69,16 @@ public class LibraryServiceImpl implements LibraryService {
     }
 
     @Override
+    public LibraryDto updateLibrary(String libraryName, LibraryDto newLibrary) {
+        log.info("Library with name {} update", libraryName);
+        Library library = libraryRepo.findLibraryByLibraryName(libraryName);
+        populateLibraryWithPresentLibraryDtoFields(library, newLibrary);
+        libraryRepo.save(library);
+        log.info("Library successfully updated");
+        return LibraryMapper.INSTANCE.mapLibraryDto(library);
+    }
+
+    @Override
     public LibraryDto getLibrary(String libraryName) {
         log.info("Get library with name {}", libraryName);
         return LibraryMapper.INSTANCE.mapLibraryDto(libraryRepo.findLibraryByLibraryName(libraryName));
@@ -98,9 +109,28 @@ public class LibraryServiceImpl implements LibraryService {
         log.info("Library with name {} add user with email {}", libraryName, email);
         User user = userRepo.findUserByEmail(email);
         Library library = libraryRepo.findLibraryByLibraryName(libraryName);
+        if (library.getUsers().contains(user) && user.getLibraries().contains(library)) {
+            log.error("User with email {} already exists in this library", email);
+            throw new LibraryException(format("User with email %s already exists in this library", email));
+        }
         user.getLibraries().add(library);
         library.getUsers().add(user);
         log.info("User with email {} successfully added library with name {}", email, libraryName);
+    }
+
+    @Override
+    @Transactional
+    public void deleteUser(String libraryName, String email) {
+        log.info("Library with name {} delete user with email {}", libraryName, email);
+        Library library = libraryRepo.findLibraryByLibraryName(libraryName);
+        User user = userRepo.findUserByEmail(email);
+        if (!library.getUsers().contains(user) && !user.getLibraries().contains(library)) {
+            log.error("No user with email {} in this library", email);
+            throw new LibraryException(format("User with email %s already exists in this library", email));
+        }
+        library.getUsers().remove(user);
+        user.getLibraries().remove(library);
+        log.info("User with email {} successfully deleted library with name {}", email, libraryName);
     }
 
     @Override
@@ -191,11 +221,12 @@ public class LibraryServiceImpl implements LibraryService {
     }
 
     @Override
+    @Transactional
     public void returnBook(String bookTitle, String userEmail, String libraryName, HttpServletRequest request) {
-        returnBooktoLib(bookTitle, userEmail, libraryName, request);
+        returnBookToLib(bookTitle, userEmail, libraryName, request);
     }
 
-    private void returnBooktoLib(String bookTitle, String userEmail, String libraryName, HttpServletRequest request) {
+    private void returnBookToLib(String bookTitle, String userEmail, String libraryName, HttpServletRequest request) {
         log.info("User with email {} return book with title {} in library {}", userEmail, bookTitle, libraryName);
         User user = userRepo.findUserByEmail(userEmail);
         Library library = libraryRepo.findLibraryByLibraryName(libraryName);
@@ -217,7 +248,6 @@ public class LibraryServiceImpl implements LibraryService {
             penaltyRepo.save(penalty);
             if (penaltyRepo.countAllByUser(user) >= 5) {
                 user.setIsAccountNonLocked(false);
-                userRepo.save(user);
                 if (Objects.nonNull(request)) {
                     new SecurityContextLogoutHandler().logout(request, null, null);
                 }
@@ -233,6 +263,30 @@ public class LibraryServiceImpl implements LibraryService {
         cal.setTime(date);
         cal.add(Calendar.DAY_OF_YEAR, dueDay);
         return cal;
+    }
+
+    private void populateLibraryWithPresentLibraryDtoFields(Library library, LibraryDto libraryDto) {
+        if (Objects.nonNull(libraryDto.getName())) {
+            library.setLibraryName(libraryDto.getName());
+        }
+        if (Objects.nonNull(libraryDto.getEmail())) {
+            library.setEmail(libraryDto.getEmail());
+        }
+        if (Objects.nonNull(libraryDto.getPhone())) {
+            library.setPhone(libraryDto.getPhone());
+        }
+        if (Objects.nonNull(libraryDto.getCountry())) {
+            library.setCountry(libraryDto.getCountry());
+        }
+        if (Objects.nonNull(libraryDto.getCity())) {
+            library.setCity(libraryDto.getCity());
+        }
+        if (Objects.nonNull(libraryDto.getAddress())) {
+            library.setAddress(libraryDto.getAddress());
+        }
+        if (Objects.nonNull(libraryDto.getPostalCode())) {
+            library.setPostalCode(libraryDto.getPostalCode());
+        }
     }
 
     private LibraryDto mapLibraryDto(Library library) {

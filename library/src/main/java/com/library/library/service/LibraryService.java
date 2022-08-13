@@ -12,6 +12,8 @@ public interface LibraryService {
 
     LibraryDto createLibrary(LibraryDto newLibrary);
 
+    LibraryDto updateLibrary(String libraryName, LibraryDto newLibrary);
+
     LibraryDto getLibrary(String libraryName);
 
     Page<LibraryDto> getPageLibraries(Pageable pageable);
@@ -19,6 +21,8 @@ public interface LibraryService {
     LibraryDto addBook(String libraryName, String bookTitle);
 
     void addUser(String libraryName, String email);
+
+    void deleteUser(String libraryName, String email);
 
     Set<LibraryDto> getAllLibrariesByBookTitle(String bookTitle);
 

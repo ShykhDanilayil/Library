@@ -24,7 +24,7 @@ public class UserDto {
     private String firstName;
     @NotEmpty(message = "Lastname may not be empty")
     private String lastName;
-    @UniqueEmail
+    @UniqueEmail(groups = {PatchGroup.class, Default.class})
     @EmailValid(groups = {PatchGroup.class, Default.class})
     @NotEmpty(message = "Email address may not be empty")
     private String email;

@@ -10,6 +10,7 @@ import com.library.library.service.LibraryService;
 import com.library.library.service.UserService;
 import com.library.library.service.exception.BookNotAvailableException;
 import com.library.library.service.exception.BorrowedException;
+import com.library.library.service.exception.LibraryException;
 import com.library.library.service.exception.ReservedException;
 import com.library.library.service.impl.UserDetailsServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -39,13 +40,15 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WithMockUser(username = "librarian", roles = "LIBRARIAN", password = "librarian")
+@WithMockUser(username = "test@email.com", roles = "LIBRARIAN", password = "librarian")
 @WebMvcTest(value = LibrarianController.class)
 @AutoConfigureMockMvc
 @Import(TestWebConfig.class)
@@ -209,6 +212,278 @@ public class LibrarianControllerTest {
     }
 
     @Test
+    void updateLibTest() throws Exception {
+        String oldName = libraryDto.getName();
+        String newName = "new Test Name";
+        libraryDto.setName(newName);
+
+        when(libraryService.isNameAlreadyInUse(oldName)).thenReturn(true);
+        when(libraryService.isNameAlreadyInUse(newName)).thenReturn(false);
+        when(userService.isEmailAlreadyInUse(libraryDto.getEmail())).thenReturn(false);
+        when(libraryService.isEmailAlreadyInUse(libraryDto.getEmail())).thenReturn(false);
+
+        when(libraryService.updateLibrary(oldName, libraryDto)).thenReturn(libraryDto);
+
+        mockMvc.perform(put("/librarian/libraries/" + oldName)
+                .content(objectMapper.writeValueAsString(libraryDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.name").value(libraryDto.getName()))
+                .andExpect(jsonPath("$.postalCode").value(libraryDto.getPostalCode()))
+                .andExpect(jsonPath("$.email").value(libraryDto.getEmail()));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void updateLibTestRoleAdmin() throws Exception {
+        String oldName = libraryDto.getName();
+        String newName = "new Test Name";
+        libraryDto.setName(newName);
+
+        when(libraryService.isNameAlreadyInUse(oldName)).thenReturn(true);
+        when(libraryService.isNameAlreadyInUse(newName)).thenReturn(false);
+        when(userService.isEmailAlreadyInUse(libraryDto.getEmail())).thenReturn(false);
+        when(libraryService.isEmailAlreadyInUse(libraryDto.getEmail())).thenReturn(false);
+
+        when(libraryService.updateLibrary(oldName, libraryDto)).thenReturn(libraryDto);
+
+        mockMvc.perform(put("/librarian/libraries/" + oldName)
+                .content(objectMapper.writeValueAsString(libraryDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.name").value(libraryDto.getName()))
+                .andExpect(jsonPath("$.postalCode").value(libraryDto.getPostalCode()))
+                .andExpect(jsonPath("$.email").value(libraryDto.getEmail()));
+    }
+
+    @Test
+    void updateLibTestEmailException() throws Exception {
+        String message = "There is already entity with this email!";
+
+        String oldName = libraryDto.getName();
+        String newName = "new Test Name";
+        libraryDto.setName(newName);
+
+        when(libraryService.isNameAlreadyInUse(newName)).thenReturn(false);
+        when(userService.isEmailAlreadyInUse(libraryDto.getEmail())).thenReturn(true);
+
+        mockMvc.perform(put("/librarian/libraries/" + oldName)
+                .content(objectMapper.writeValueAsString(libraryDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$[0].message").value(message));
+
+        verify(libraryService, never()).isNameAlreadyInUse(oldName);
+        verify(libraryService).isNameAlreadyInUse(newName);
+        verify(userService).isEmailAlreadyInUse(libraryDto.getEmail());
+        verify(libraryService, never()).isEmailAlreadyInUse(anyString());
+        verify(libraryService, never()).updateLibrary(anyString(), any());
+    }
+
+    @Test
+    void updateLibTestNameException() throws Exception {
+        String message = "updateLibrary.name: This library name doesn't exists!";
+
+        String oldName = libraryDto.getName();
+        String newName = "new Test Name";
+        libraryDto.setName(newName);
+
+
+        when(libraryService.isNameAlreadyInUse(oldName)).thenReturn(false);
+        when(libraryService.isNameAlreadyInUse(newName)).thenReturn(false);
+        when(userService.isEmailAlreadyInUse(libraryDto.getEmail())).thenReturn(false);
+        when(libraryService.isEmailAlreadyInUse(libraryDto.getEmail())).thenReturn(false);
+
+        mockMvc.perform(put("/librarian/libraries/" + oldName)
+                .content(objectMapper.writeValueAsString(libraryDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(libraryService).isNameAlreadyInUse(oldName);
+        verify(libraryService, times(2)).isNameAlreadyInUse(newName);
+        verify(userService, times(2)).isEmailAlreadyInUse(libraryDto.getEmail());
+        verify(libraryService, times(2)).isEmailAlreadyInUse(libraryDto.getEmail());
+        verify(libraryService, never()).updateLibrary(anyString(), any());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void updateLibTestNotAuthorized() throws Exception {
+        mockMvc.perform(put("/librarian/libraries/" + libraryDto.getName())
+                .content(objectMapper.writeValueAsString(libraryDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(userService, never()).isEmailAlreadyInUse(anyString());
+        verify(libraryService, never()).isEmailAlreadyInUse(anyString());
+        verify(libraryService, never()).updateLibrary(anyString(), any());
+    }
+
+    @Test
+    @WithMockUser
+    void updateLibTestRoleUser() throws Exception {
+        mockMvc.perform(put("/librarian/libraries/" + libraryDto.getName())
+                .content(objectMapper.writeValueAsString(libraryDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(userService, never()).isEmailAlreadyInUse(anyString());
+        verify(libraryService, never()).isEmailAlreadyInUse(anyString());
+        verify(libraryService, never()).updateLibrary(anyString(), any());
+    }
+
+    @Test
+    void partialUpdateLibTest() throws Exception {
+        String oldName = libraryDto.getName();
+        String newName = "new name test";
+        LibraryDto newLibDto = LibraryDto.builder().name(newName).email("newEmail@test.com").build();
+        libraryDto.setName(newLibDto.getName());
+        libraryDto.setEmail(newLibDto.getEmail());
+
+        when(libraryService.isNameAlreadyInUse(oldName)).thenReturn(true);
+        when(libraryService.isNameAlreadyInUse(newName)).thenReturn(false);
+        when(userService.isEmailAlreadyInUse(libraryDto.getEmail())).thenReturn(false);
+        when(libraryService.isEmailAlreadyInUse(libraryDto.getEmail())).thenReturn(false);
+        when(libraryService.updateLibrary(oldName, newLibDto)).thenReturn(libraryDto);
+
+        mockMvc.perform(patch("/librarian/libraries/" + oldName)
+                .content(objectMapper.writeValueAsString(newLibDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.name").value(libraryDto.getName()))
+                .andExpect(jsonPath("$.email").value(libraryDto.getEmail()));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void partialUpdateLibTestEmailExc() throws Exception {
+        String message = "There is already entity with this email!";
+        String oldName = libraryDto.getName();
+        String newName = "new name test";
+        LibraryDto newLibDto = LibraryDto.builder().name(newName).email("newEmail@test.com").build();
+        libraryDto.setName(newLibDto.getName());
+        libraryDto.setEmail(newLibDto.getEmail());
+
+        when(libraryService.isNameAlreadyInUse(newName)).thenReturn(false);
+        when(userService.isEmailAlreadyInUse(libraryDto.getEmail())).thenReturn(false);
+        when(libraryService.isEmailAlreadyInUse(libraryDto.getEmail())).thenReturn(true);
+
+        mockMvc.perform(patch("/librarian/libraries/" + oldName)
+                .content(objectMapper.writeValueAsString(newLibDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$[0].message").value(message));
+
+        verify(libraryService, never()).isNameAlreadyInUse(oldName);
+        verify(libraryService).isNameAlreadyInUse(newName);
+        verify(userService).isEmailAlreadyInUse(libraryDto.getEmail());
+        verify(libraryService).isEmailAlreadyInUse(libraryDto.getEmail());
+        verify(libraryService, never()).updateLibrary(anyString(), any());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void partialUpdateLibTestNameExc() throws Exception {
+        String message = "There is already library with this name!";
+        String oldName = libraryDto.getName();
+        String newName = "new name test";
+        LibraryDto newLibDto = LibraryDto.builder().name(newName).email("newEmail@test.com").build();
+        libraryDto.setName(newLibDto.getName());
+        libraryDto.setEmail(newLibDto.getEmail());
+
+        when(libraryService.isNameAlreadyInUse(newName)).thenReturn(true);
+        when(userService.isEmailAlreadyInUse(libraryDto.getEmail())).thenReturn(false);
+        when(libraryService.isEmailAlreadyInUse(libraryDto.getEmail())).thenReturn(false);
+
+        mockMvc.perform(patch("/librarian/libraries/" + oldName)
+                .content(objectMapper.writeValueAsString(newLibDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$[0].message").value(message));
+
+        verify(libraryService, never()).isNameAlreadyInUse(oldName);
+        verify(libraryService).isNameAlreadyInUse(newName);
+        verify(userService).isEmailAlreadyInUse(libraryDto.getEmail());
+        verify(libraryService).isEmailAlreadyInUse(libraryDto.getEmail());
+        verify(libraryService, never()).updateLibrary(anyString(), any());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void partialUpdateLibNameNullTest() throws Exception {
+        String oldName = libraryDto.getName();
+        libraryDto.setName(null);
+
+        when(libraryService.isNameAlreadyInUse(oldName)).thenReturn(true);
+        when(userService.isEmailAlreadyInUse(libraryDto.getEmail())).thenReturn(false);
+        when(libraryService.isEmailAlreadyInUse(libraryDto.getEmail())).thenReturn(false);
+        when(libraryService.updateLibrary(oldName, libraryDto)).thenReturn(libraryDto);
+
+        mockMvc.perform(patch("/librarian/libraries/" + oldName)
+                .content(objectMapper.writeValueAsString(libraryDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk());
+
+        verify(libraryService).isNameAlreadyInUse(oldName);
+        verify(libraryService, never()).isNameAlreadyInUse(libraryDto.getName());
+        verify(userService).isEmailAlreadyInUse(libraryDto.getEmail());
+        verify(libraryService).isEmailAlreadyInUse(libraryDto.getEmail());
+        verify(libraryService).updateLibrary(oldName, libraryDto);
+
+        libraryDto.setName(oldName);
+    }
+
+    @Test
+    @WithAnonymousUser
+    void partialUpdateLibTestNotAuthorized() throws Exception {
+        mockMvc.perform(patch("/librarian/libraries/" + libraryDto.getName())
+                .content(objectMapper.writeValueAsString(libraryDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(userService, never()).isEmailAlreadyInUse(anyString());
+        verify(libraryService, never()).isEmailAlreadyInUse(anyString());
+        verify(libraryService, never()).updateLibrary(anyString(), any());
+    }
+
+    @Test
+    @WithMockUser
+    void partialUpdateLibTestRoleUser() throws Exception {
+        mockMvc.perform(patch("/librarian/libraries/" + libraryDto.getName())
+                .content(objectMapper.writeValueAsString(libraryDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(userService, never()).isEmailAlreadyInUse(anyString());
+        verify(libraryService, never()).isEmailAlreadyInUse(anyString());
+        verify(libraryService, never()).updateLibrary(anyString(), any());
+    }
+
+    @Test
     void deleteLibraryTest() throws Exception {
         when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
         doNothing().when(libraryService).deleteLibrary(libraryDto.getName());
@@ -307,6 +582,208 @@ public class LibrarianControllerTest {
         verify(bookService).isExistBookTitle(bookDto.getTitle());
         verify(libraryService).isNameAlreadyInUse(libraryDto.getName());
         verify(libraryService).reserveBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName());
+    }
+
+    @Test
+    void addUserTest() throws Exception {
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
+        doNothing().when(libraryService).addUser(libraryDto.getName(), userDto.getEmail());
+
+        mockMvc.perform(post("/librarian/libraries/users")
+                .param("libraryName", libraryDto.getName())
+                .param("email", userDto.getEmail()))
+                .andDo(print())
+                .andExpect(status().isOk());
+
+        verify(libraryService, times(1)).isNameAlreadyInUse(libraryDto.getName());
+        verify(userService, times(1)).isEmailAlreadyInUse(userDto.getEmail());
+        verify(libraryService, times(1)).addUser(libraryDto.getName(), userDto.getEmail());
+    }
+
+    @Test
+    void addUserTestRoleUserException() throws Exception {
+        String message = format("This user already exists in this library");
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
+        doThrow(new LibraryException(message)).when(libraryService).addUser(libraryDto.getName(), userDto.getEmail());
+
+        mockMvc.perform(post("/librarian/libraries/users")
+                .param("libraryName", libraryDto.getName())
+                .param("email", userDto.getEmail()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(libraryService, times(1)).isNameAlreadyInUse(libraryDto.getName());
+        verify(userService, times(1)).isEmailAlreadyInUse(userDto.getEmail());
+        verify(libraryService, times(1)).addUser(libraryDto.getName(), userDto.getEmail());
+    }
+
+    @Test
+    @WithMockUser(roles = "LIBRARIAN")
+    void addUserTestRoleLibrarian() throws Exception {
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
+        doNothing().when(libraryService).addUser(libraryDto.getName(), userDto.getEmail());
+
+        mockMvc.perform(post("/librarian/libraries/users")
+                .param("libraryName", libraryDto.getName())
+                .param("email", userDto.getEmail()))
+                .andDo(print())
+                .andExpect(status().isOk());
+
+        verify(libraryService, times(1)).isNameAlreadyInUse(libraryDto.getName());
+        verify(userService, times(1)).isEmailAlreadyInUse(userDto.getEmail());
+        verify(libraryService, times(1)).addUser(libraryDto.getName(), userDto.getEmail());
+    }
+
+    @Test
+    @WithMockUser
+    void addUserTestRoleUser() throws Exception {
+        mockMvc.perform(post("/librarian/libraries/users")
+                .param("libraryName", libraryDto.getName())
+                .param("email", userDto.getEmail()))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(userService, never()).isEmailAlreadyInUse(anyString());
+        verify(libraryService, never()).addUser(anyString(), anyString());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void addUserTestRoleNotAuthorized() throws Exception {
+        mockMvc.perform(post("/librarian/libraries/users")
+                .param("libraryName", libraryDto.getName())
+                .param("email", userDto.getEmail()))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(userService, never()).isEmailAlreadyInUse(anyString());
+        verify(libraryService, never()).addUser(anyString(), anyString());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void addUserTestEmailException() throws Exception {
+        String message = "addUser.email: This email doesn't exists!";
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(false);
+
+        mockMvc.perform(post("/librarian/libraries/users")
+                .param("libraryName", libraryDto.getName())
+                .param("email", userDto.getEmail()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(libraryService, times(1)).isNameAlreadyInUse(libraryDto.getName());
+        verify(userService, times(1)).isEmailAlreadyInUse(userDto.getEmail());
+        verify(libraryService, never()).addUser(anyString(), anyString());
+    }
+
+    @Test
+    void deleteUserTest() throws Exception {
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
+        doNothing().when(libraryService).deleteUser(libraryDto.getName(), userDto.getEmail());
+
+        mockMvc.perform(delete("/librarian/libraries/users")
+                .param("libraryName", libraryDto.getName())
+                .param("email", userDto.getEmail()))
+                .andDo(print())
+                .andExpect(status().isNoContent());
+
+        verify(libraryService, times(1)).isNameAlreadyInUse(libraryDto.getName());
+        verify(userService, times(1)).isEmailAlreadyInUse(userDto.getEmail());
+        verify(libraryService, times(1)).deleteUser(libraryDto.getName(), userDto.getEmail());
+    }
+
+    @Test
+    void deleteUserTestRoleUserException() throws Exception {
+        String message = format("This user already exists in this library");
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
+        doThrow(new LibraryException(message)).when(libraryService).deleteUser(libraryDto.getName(), userDto.getEmail());
+
+        mockMvc.perform(delete("/librarian/libraries/users")
+                .param("libraryName", libraryDto.getName())
+                .param("email", userDto.getEmail()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(libraryService, times(1)).isNameAlreadyInUse(libraryDto.getName());
+        verify(userService, times(1)).isEmailAlreadyInUse(userDto.getEmail());
+        verify(libraryService, times(1)).deleteUser(libraryDto.getName(), userDto.getEmail());
+    }
+
+    @Test
+    @WithMockUser(roles = "LIBRARIAN")
+    void deleteUserTestRoleLibrarian() throws Exception {
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
+        doNothing().when(libraryService).deleteUser(libraryDto.getName(), userDto.getEmail());
+
+        mockMvc.perform(delete("/librarian/libraries/users")
+                .param("libraryName", libraryDto.getName())
+                .param("email", userDto.getEmail()))
+                .andDo(print())
+                .andExpect(status().isNoContent());
+
+        verify(libraryService, times(1)).isNameAlreadyInUse(libraryDto.getName());
+        verify(userService, times(1)).isEmailAlreadyInUse(userDto.getEmail());
+        verify(libraryService, times(1)).deleteUser(libraryDto.getName(), userDto.getEmail());
+    }
+
+    @Test
+    @WithMockUser
+    void deleteUserTestRoleUser() throws Exception {
+        mockMvc.perform(delete("/librarian/libraries/users")
+                .param("libraryName", libraryDto.getName())
+                .param("email", userDto.getEmail()))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(userService, never()).isEmailAlreadyInUse(anyString());
+        verify(libraryService, never()).deleteUser(anyString(), anyString());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void deleteUserTestRoleNotAuthorized() throws Exception {
+        mockMvc.perform(delete("/librarian/libraries/users")
+                .param("libraryName", libraryDto.getName())
+                .param("email", userDto.getEmail()))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(userService, never()).isEmailAlreadyInUse(anyString());
+        verify(libraryService, never()).deleteUser(anyString(), anyString());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void deleteUserTestEmailException() throws Exception {
+        String message = "deleteUser.email: This email doesn't exists!";
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(false);
+
+        mockMvc.perform(delete("/librarian/libraries/users")
+                .param("libraryName", libraryDto.getName())
+                .param("email", userDto.getEmail()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(libraryService, times(1)).isNameAlreadyInUse(libraryDto.getName());
+        verify(userService, times(1)).isEmailAlreadyInUse(userDto.getEmail());
+        verify(libraryService, never()).deleteUser(anyString(), anyString());
     }
 
     @Test

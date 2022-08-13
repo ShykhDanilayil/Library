@@ -2,8 +2,6 @@ package com.library.library.controller;
 
 import com.library.library.controller.dto.BookDto;
 import com.library.library.controller.dto.LibraryDto;
-import com.library.library.controller.validation.EmailValid;
-import com.library.library.controller.validation.IsEmailUser;
 import com.library.library.controller.validation.IsNameLibrary;
 import com.library.library.controller.validation.IsTitleBook;
 import com.library.library.service.LibraryService;
@@ -18,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -52,12 +51,20 @@ public class LibraryController {
         return libraryService.getLibrary(name);
     }
 
-    @ApiOperation(value = "Library add user (USER, LIBRARIAN)", authorizations = {@Authorization(value = "basicAuth")})
-    @PreAuthorize("hasAnyRole('USER','LIBRARIAN')")
+    @ApiOperation(value = "Library add user (USER)", authorizations = {@Authorization(value = "basicAuth")})
+    @PreAuthorize("hasRole('USER')")
     @ResponseStatus(HttpStatus.OK)
     @PostMapping(value = "/users")
-    public void addUser(@RequestParam @IsNameLibrary String libraryName, @RequestParam @EmailValid @IsEmailUser String email) {
-        libraryService.addUser(libraryName, email);
+    public void addUser(@RequestParam @IsNameLibrary String libraryName, @AuthenticationPrincipal UserDetails activeUser) {
+        libraryService.addUser(libraryName, activeUser.getUsername());
+    }
+
+    @ApiOperation(value = "Library delete user (USER)", authorizations = {@Authorization(value = "basicAuth")})
+    @PreAuthorize("hasRole('USER')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @DeleteMapping(value = "/users")
+    public void deleteUser(@RequestParam @IsNameLibrary String libraryName, @AuthenticationPrincipal UserDetails activeUser) {
+        libraryService.deleteUser(libraryName, activeUser.getUsername());
     }
 
     @ApiOperation("Search book in another library")

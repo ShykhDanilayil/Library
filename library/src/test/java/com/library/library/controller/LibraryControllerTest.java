@@ -9,6 +9,7 @@ import com.library.library.service.LibraryService;
 import com.library.library.service.UserService;
 import com.library.library.service.exception.BookNotAvailableException;
 import com.library.library.service.exception.EntityNotFoundException;
+import com.library.library.service.exception.LibraryException;
 import com.library.library.service.exception.ReservedException;
 import com.library.library.service.impl.UserDetailsServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,7 @@ import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -138,86 +140,139 @@ public class LibraryControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    @WithMockUser(username = "user@email.com", roles = "USER")
     void addUserTestRoleUser() throws Exception {
         when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
-        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
-        doNothing().when(libraryService).addUser(libraryDto.getName(), userDto.getEmail());
+        doNothing().when(libraryService).addUser(libraryDto.getName(), "user@email.com");
 
         mockMvc.perform(post("/libraries/users")
-                .param("libraryName", libraryDto.getName())
-                .param("email", userDto.getEmail()))
+                .param("libraryName", libraryDto.getName()))
                 .andDo(print())
                 .andExpect(status().isOk());
 
         verify(libraryService, times(1)).isNameAlreadyInUse(libraryDto.getName());
-        verify(userService, times(1)).isEmailAlreadyInUse(userDto.getEmail());
-        verify(libraryService, times(1)).addUser(libraryDto.getName(), userDto.getEmail());
+        verify(libraryService, times(1)).addUser(libraryDto.getName(), "user@email.com");
+    }
+
+    @Test
+    @WithMockUser(username = "user@email.com", roles = "USER")
+    void addUserTestRoleUserException() throws Exception {
+        String message = format("This user already exists in this library");
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+        doThrow(new LibraryException(message)).when(libraryService).addUser(libraryDto.getName(), "user@email.com");
+
+        mockMvc.perform(post("/libraries/users")
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(libraryService, times(1)).isNameAlreadyInUse(libraryDto.getName());
+        verify(libraryService, times(1)).addUser(libraryDto.getName(), "user@email.com");
     }
 
     @Test
     @WithMockUser(roles = "LIBRARIAN")
     void addUserTestRoleLibrarian() throws Exception {
-        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
-        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(true);
-        doNothing().when(libraryService).addUser(libraryDto.getName(), userDto.getEmail());
-
         mockMvc.perform(post("/libraries/users")
-                .param("libraryName", libraryDto.getName())
-                .param("email", userDto.getEmail()))
+                .param("libraryName", libraryDto.getName()))
                 .andDo(print())
-                .andExpect(status().isOk());
+                .andExpect(status().isForbidden());
 
-        verify(libraryService, times(1)).isNameAlreadyInUse(libraryDto.getName());
-        verify(userService, times(1)).isEmailAlreadyInUse(userDto.getEmail());
-        verify(libraryService, times(1)).addUser(libraryDto.getName(), userDto.getEmail());
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(libraryService, never()).addUser(anyString(), anyString());
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
     void addUserTestRoleAdmin() throws Exception {
         mockMvc.perform(post("/libraries/users")
-                .param("libraryName", libraryDto.getName())
-                .param("email", userDto.getEmail()))
+                .param("libraryName", libraryDto.getName()))
                 .andDo(print())
                 .andExpect(status().isForbidden());
 
-        verify(libraryService, never()).isNameAlreadyInUse(libraryDto.getName());
-        verify(userService, never()).isEmailAlreadyInUse(userDto.getEmail());
-        verify(libraryService, never()).addUser(libraryDto.getName(), userDto.getEmail());
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(libraryService, never()).addUser(anyString(), anyString());
     }
 
     @Test
     @WithAnonymousUser
     void addUserTestRoleNotAuthorized() throws Exception {
         mockMvc.perform(post("/libraries/users")
-                .param("libraryName", libraryDto.getName())
-                .param("email", userDto.getEmail()))
+                .param("libraryName", libraryDto.getName()))
                 .andDo(print())
                 .andExpect(status().isUnauthorized());
 
-        verify(libraryService, never()).isNameAlreadyInUse(libraryDto.getName());
-        verify(userService, never()).isEmailAlreadyInUse(userDto.getEmail());
-        verify(libraryService, never()).addUser(libraryDto.getName(), userDto.getEmail());
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(libraryService, never()).deleteUser(anyString(), anyString());
     }
 
     @Test
-    @WithMockUser
-    void addUserTest2() throws Exception {
-        String message = "addUser.email: This email doesn't exists!";
+    @WithMockUser(username = "user@email.com", roles = "USER")
+    void deleteUserTestRoleUser() throws Exception {
         when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
-        when(userService.isEmailAlreadyInUse(userDto.getEmail())).thenReturn(false);
+        doNothing().when(libraryService).deleteUser(libraryDto.getName(), "user@email.com");
 
-        mockMvc.perform(post("/libraries/users")
-                .param("libraryName", libraryDto.getName())
-                .param("email", userDto.getEmail()))
+        mockMvc.perform(delete("/libraries/users")
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isNoContent());
+
+        verify(libraryService, times(1)).isNameAlreadyInUse(libraryDto.getName());
+        verify(libraryService, times(1)).deleteUser(libraryDto.getName(), "user@email.com");
+    }
+
+    @Test
+    @WithMockUser(username = "user@email.com", roles = "USER")
+    void deleteUserTestRoleUserException() throws Exception {
+        String message = format("This user already exists in this library");
+        when(libraryService.isNameAlreadyInUse(libraryDto.getName())).thenReturn(true);
+        doThrow(new LibraryException(message)).when(libraryService).deleteUser(libraryDto.getName(), "user@email.com");
+
+        mockMvc.perform(delete("/libraries/users")
+                .param("libraryName", libraryDto.getName()))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(message));
 
         verify(libraryService, times(1)).isNameAlreadyInUse(libraryDto.getName());
-        verify(userService, times(1)).isEmailAlreadyInUse(userDto.getEmail());
-        verify(libraryService, never()).addUser(any(), any());
+        verify(libraryService, times(1)).deleteUser(libraryDto.getName(), "user@email.com");
+    }
+
+    @Test
+    @WithMockUser(roles = "LIBRARIAN")
+    void deleteUserTestRoleLibrarian() throws Exception {
+        mockMvc.perform(delete("/libraries/users")
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(libraryService, never()).deleteUser(anyString(), anyString());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void deleteUserTestRoleAdmin() throws Exception {
+        mockMvc.perform(delete("/libraries/users")
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(libraryService, never()).deleteUser(anyString(), anyString());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void deleteUserTestRoleNotAuthorized() throws Exception {
+        mockMvc.perform(delete("/libraries/users")
+                .param("libraryName", libraryDto.getName()))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+
+        verify(libraryService, never()).isNameAlreadyInUse(anyString());
+        verify(libraryService, never()).deleteUser(anyString(), anyString());
     }
 
     @Test
