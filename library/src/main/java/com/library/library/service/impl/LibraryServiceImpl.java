@@ -25,6 +25,7 @@ import com.library.library.service.repository.ReservedRepository;
 import com.library.library.service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
@@ -54,7 +55,9 @@ public class LibraryServiceImpl implements LibraryService {
     private final BorrowedRepository borrowedRepo;
     private final BookPenaltyRepository penaltyRepo;
 
+    @Value("${expiration.days.reserved}")
     private final int RESERVED_EXPIRATION_DAYS = 3;
+    @Value("${expiration.days.borrowed}")
     private final int BORROWED_EXPIRATION_DAYS = 10;
 
     @Override
