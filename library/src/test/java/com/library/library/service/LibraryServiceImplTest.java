@@ -543,7 +543,7 @@ public class LibraryServiceImplTest {
     }
 
     @Test
-    void returnBookSetBlockTest() throws Exception {
+    void returnBookSetBlockTest() {
         Borrowed borrowed = getBorrowed();
         borrowed.setDueDate(Calendar.getInstance().getTime());
         //given
@@ -553,7 +553,6 @@ public class LibraryServiceImplTest {
         doNothing().when(borrowedRepository).delete(borrowed);
         when(penaltyRepository.countAllByUser(user)).thenReturn(6);
         when(penaltyRepository.save(isA(BookPenalty.class))).thenReturn(new BookPenalty());
-        when(userRepository.save(isA(User.class))).thenReturn(user);
 
         //when
         libraryService.returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName(), new Request(new Connector()));
@@ -564,11 +563,10 @@ public class LibraryServiceImplTest {
         verify(borrowedRepository, times(1)).findBorrowedByUserAndLibrary(user, library);
         verify(borrowedRepository, times(1)).delete(borrowed);
         verify(penaltyRepository, times(1)).save(isA(BookPenalty.class));
-        verify(userRepository, times(1)).save(isA(User.class));
     }
 
     @Test
-    void returnBookSetBlockNullRequestTest() throws Exception {
+    void returnBookSetBlockNullRequestTest() {
         Borrowed borrowed = getBorrowed();
         borrowed.setDueDate(Calendar.getInstance().getTime());
         //given
@@ -578,7 +576,6 @@ public class LibraryServiceImplTest {
         doNothing().when(borrowedRepository).delete(borrowed);
         when(penaltyRepository.countAllByUser(user)).thenReturn(6);
         when(penaltyRepository.save(isA(BookPenalty.class))).thenReturn(new BookPenalty());
-        when(userRepository.save(isA(User.class))).thenReturn(user);
 
         //when
         libraryService.returnBook(bookDto.getTitle(), userDto.getEmail(), libraryDto.getName(), null);
@@ -589,7 +586,6 @@ public class LibraryServiceImplTest {
         verify(borrowedRepository, times(1)).findBorrowedByUserAndLibrary(user, library);
         verify(borrowedRepository, times(1)).delete(borrowed);
         verify(penaltyRepository, times(1)).save(isA(BookPenalty.class));
-        verify(userRepository, times(1)).save(isA(User.class));
     }
 
     @Test
