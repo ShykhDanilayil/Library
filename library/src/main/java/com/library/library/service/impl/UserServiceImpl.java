@@ -70,7 +70,7 @@ public class UserServiceImpl implements UserService {
     public UserDto updateUser(String email, UserDto userDto) {
         log.info("Updating user with email {}", email);
         User user = getUserByEmail(email);
-        populateUserWithPresentUserDtoFields(user, userDto);
+        populatedFields(user, userDto);
         userRepository.save(user);
         log.info("User with email {} successfully updated", user.getEmail());
         return UserMapper.INSTANCE.mapUserDto(user);
@@ -106,7 +106,7 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
-    private void populateUserWithPresentUserDtoFields(User user, UserDto userDto) {
+    private void populatedFields(User user, UserDto userDto) {
         if (Objects.nonNull(userDto.getFirstName())) {
             user.setFirstName(userDto.getFirstName());
         }

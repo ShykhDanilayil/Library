@@ -75,7 +75,7 @@ public class LibraryServiceImpl implements LibraryService {
     public LibraryDto updateLibrary(String libraryName, LibraryDto newLibrary) {
         log.info("Library with name {} update", libraryName);
         Library library = libraryRepo.findLibraryByLibraryName(libraryName);
-        populateLibraryWithPresentLibraryDtoFields(library, newLibrary);
+        populatedFields(library, newLibrary);
         libraryRepo.save(library);
         log.info("Library successfully updated");
         return LibraryMapper.INSTANCE.mapLibraryDto(library);
@@ -268,7 +268,7 @@ public class LibraryServiceImpl implements LibraryService {
         return cal;
     }
 
-    private void populateLibraryWithPresentLibraryDtoFields(Library library, LibraryDto libraryDto) {
+    private void populatedFields(Library library, LibraryDto libraryDto) {
         if (Objects.nonNull(libraryDto.getName())) {
             library.setLibraryName(libraryDto.getName());
         }
