@@ -6,6 +6,7 @@ import com.library.library.controller.dto.AuthorDto;
 import com.library.library.controller.dto.BookDto;
 import com.library.library.service.AuthorService;
 import com.library.library.service.BookService;
+import com.library.library.service.exception.BookNotAvailableException;
 import com.library.library.service.impl.UserDetailsServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,13 +27,20 @@ import javax.sql.DataSource;
 import java.util.Collections;
 import java.util.List;
 
+import static java.lang.String.format;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -203,6 +211,165 @@ public class BookControllerTest {
     }
 
     @Test
+    void updateBookTest() throws Exception {
+        long bookId = 321L;
+        when(bookService.updateBook(bookId, bookDto)).thenReturn(bookDto);
+
+        mockMvc.perform(put("/books/" + bookId)
+                .content(objectMapper.writeValueAsString(bookDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.title").value(bookDto.getTitle()))
+                .andExpect(jsonPath("$.description").value(bookDto.getDescription()));
+    }
+
+    @Test
+    @WithAnonymousUser
+    void updateBookTestNotAuthorized() throws Exception {
+        mockMvc.perform(put("/books/" + 23L)
+                .content(objectMapper.writeValueAsString(bookDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+
+        verify(bookService, never()).updateBook(anyLong(), any());
+    }
+
+    @Test
+    @WithMockUser
+    void updateBookTestRoleUser() throws Exception {
+        mockMvc.perform(put("/books/" + 43L)
+                .content(objectMapper.writeValueAsString(bookDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+
+        verify(bookService, never()).updateBook(anyLong(), any());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void updateBookNullDescriptionExTest() throws Exception {
+        long bookId = 321L;
+        String message = "Book description may not be empty";
+        bookDto.setDescription(null);
+
+        mockMvc.perform(put("/books/" + bookId)
+                .content(objectMapper.writeValueAsString(bookDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$[0].message").value(message));
+
+        verify(bookService, never()).updateBook(anyLong(), any());
+        bookDto.setDescription("new t e s t desc");
+    }
+
+    @Test
+    void updateBookDescriptionExTest() throws Exception {
+        long bookId = 321L;
+        String message = "Invalid book description. Description must be 4 words";
+        bookDto.setDescription("string");
+
+        mockMvc.perform(put("/books/" + bookId)
+                .content(objectMapper.writeValueAsString(bookDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$[0].message").value(message));
+
+        verify(bookService, never()).updateBook(anyLong(), any());
+        bookDto.setDescription("new t e s t desc");
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void updateBookNotAvailableExTest() throws Exception {
+        long bookId = 321L;
+        String message = format("Book with id %s not available", bookId);
+        when(bookService.updateBook(bookId, bookDto)).thenThrow(new BookNotAvailableException(message));
+
+        mockMvc.perform(put("/books/" + bookId)
+                .content(objectMapper.writeValueAsString(bookDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value(message));
+    }
+
+    @Test
+    void partialUpdateBookTest() throws Exception {
+        long bookId = 321L;
+        when(bookService.updateBook(bookId, bookDto)).thenReturn(bookDto);
+
+        mockMvc.perform(patch("/books/" + bookId)
+                .content(objectMapper.writeValueAsString(bookDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.title").value(bookDto.getTitle()))
+                .andExpect(jsonPath("$.description").value(bookDto.getDescription()));
+    }
+
+    @Test
+    @WithAnonymousUser
+    void partialUpdateBookTestNotAuthorized() throws Exception {
+        mockMvc.perform(patch("/books/" + 65L)
+                .content(objectMapper.writeValueAsString(bookDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+
+        verify(bookService, never()).updateBook(anyLong(), any());
+    }
+
+    @Test
+    @WithMockUser
+    void partialUpdateBookTestRoleUser() throws Exception {
+        mockMvc.perform(patch("/books/" + 32L)
+                .content(objectMapper.writeValueAsString(bookDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+
+        verify(bookService, never()).updateBook(anyLong(), any());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void partialUpdateBookNotAvailableExTest() throws Exception {
+        long bookId = 321L;
+        String message = format("Book with id %s not available", bookId);
+        when(bookService.updateBook(bookId, bookDto)).thenThrow(new BookNotAvailableException(message));
+
+        mockMvc.perform(patch("/books/" + bookId)
+                .content(objectMapper.writeValueAsString(bookDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value(message));
+    }
+
+    @Test
+    void partialUpdateBookNullDescTest() throws Exception {
+        long bookId = 321L;
+        bookDto.setDescription(null);
+        when(bookService.updateBook(bookId, bookDto)).thenReturn(bookDto);
+
+        mockMvc.perform(patch("/books/" + bookId)
+                .content(objectMapper.writeValueAsString(bookDto))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value(bookDto.getTitle()));
+
+        bookDto.setDescription("n e w   test    description");
+    }
+
+    @Test
     @WithMockUser(roles = "ADMIN")
     void getAuthorByBookTest() throws Exception {
         when(bookService.isExistBookTitle(bookDto.getTitle())).thenReturn(true);
@@ -231,6 +398,32 @@ public class BookControllerTest {
 
         verify(bookService, only()).isExistBookTitle(bookDto.getTitle());
         verify(bookService, never()).getAuthorByBook(bookDto.getTitle());
+    }
+
+    @Test
+    void deleteBookTest() throws Exception {
+        long bookId = 321L;
+        doNothing().when(bookService).deleteBook(bookId);
+
+        mockMvc.perform(delete("/books/" + bookId))
+                .andDo(print())
+                .andExpect(status().isNoContent());
+
+        verify(bookService).deleteBook(bookId);
+    }
+
+    @Test
+    void deleteBookNotAvailableExTest() throws Exception {
+        long bookId = 321L;
+        String message = format("Book with id %s not available", bookId);
+        doThrow(new BookNotAvailableException(message)).when(bookService).deleteBook(bookId);
+
+        mockMvc.perform(delete("/books/" + bookId))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value(message));
+
+        verify(bookService).deleteBook(bookId);
     }
 
     private AuthorDto getAuthorDto() {
