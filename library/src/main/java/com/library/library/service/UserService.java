@@ -1,21 +1,20 @@
 package com.library.library.service;
 
 import com.library.library.controller.dto.UserDto;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface UserService {
 
+    boolean isEmailAlreadyInUse(String email);
+
     UserDto getUser(String email);
 
-    List<UserDto> listUsers();
+    Page<UserDto> pageUsers(Pageable pageable);
 
-    UserDto createUser(UserDto userDto, String password);
+    UserDto createUser(UserDto userDto);
 
     UserDto updateUser(String email, UserDto userDto);
 
-    void addLibrary(String email, String libraryName);
-
     void deleteUser(String email);
-
 }

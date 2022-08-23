@@ -1,77 +1,107 @@
 package com.library.library.controller;
 
+import com.library.library.controller.dto.BookDto;
 import com.library.library.controller.dto.LibraryDto;
+import com.library.library.controller.validation.IsNameLibrary;
+import com.library.library.controller.validation.IsTitleBook;
 import com.library.library.service.LibraryService;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import java.security.Principal;
 import java.util.Set;
 
+@Validated
 @RestController
-@RequestMapping("/library")
+@RequestMapping("/libraries")
 @RequiredArgsConstructor
-@Api(tags = "API description for SWAGGER documentation")
-@ApiResponses({
-        @ApiResponse(code = 404, message = "Not found"),
-        @ApiResponse(code = 500, message = "Internal Server Error")
-})
 public class LibraryController {
 
     private final LibraryService libraryService;
 
-    @ApiOperation("Create Library")
-    @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping("/create")
-    public LibraryDto createLibrary(@RequestBody LibraryDto libraryDto) {
-        return libraryService.createLibrary(libraryDto);
-    }
-
-    @ApiOperation("All libraries")
+    @ApiOperation("All libraries page")
     @ResponseStatus(HttpStatus.OK)
     @GetMapping
-    public List<LibraryDto> getAllLibraries() {
-        return libraryService.getAllLibraries();
+    public Page<LibraryDto> getAllLibraries(Pageable pageable) {
+        return libraryService.getPageLibraries(pageable);
     }
 
     @ApiOperation("Get library")
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping("/{address}")
-    public LibraryDto getLibrary(@PathVariable String address) {
-        return libraryService.getLibrary(address);
+    @GetMapping("/{name}")
+    public LibraryDto getLibrary(@PathVariable @IsNameLibrary String name) {
+        return libraryService.getLibrary(name);
     }
 
-    @ApiOperation("Delete library")
-    @DeleteMapping(value = "/{address}")
-    public ResponseEntity<Void> deleteLibrary(@PathVariable String address) {
-        libraryService.deleteLibrary(address);
-        return ResponseEntity.noContent().build();
-    }
-
-    @ApiOperation("Library add book")
+    @ApiOperation(value = "Library add user (USER)", authorizations = {@Authorization(value = "basicAuth")})
+    @PreAuthorize("hasRole('USER')")
     @ResponseStatus(HttpStatus.OK)
-    @PostMapping(value = "{libraryName}/book/{bookTitle}")
-    public LibraryDto addBook(@PathVariable String libraryName, @PathVariable String bookTitle) {
-        return libraryService.addBook(libraryName, bookTitle);
+    @PostMapping(value = "/users")
+    public void addUser(@RequestParam @IsNameLibrary String libraryName, @AuthenticationPrincipal UserDetails activeUser) {
+        libraryService.addUser(libraryName, activeUser.getUsername());
     }
 
-    @ApiOperation("Get library by books title")
+    @ApiOperation(value = "Library delete user (USER)", authorizations = {@Authorization(value = "basicAuth")})
+    @PreAuthorize("hasRole('USER')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @DeleteMapping(value = "/users")
+    public void deleteUser(@RequestParam @IsNameLibrary String libraryName, @AuthenticationPrincipal UserDetails activeUser) {
+        libraryService.deleteUser(libraryName, activeUser.getUsername());
+    }
+
+    @ApiOperation("Search book in another library")
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping(value = "/book/{bookTitle}")
-    public Set<LibraryDto> getLibraryByBookTitle(@PathVariable String bookTitle) {
-        return libraryService.getLibraryByBookTitle(bookTitle);
+    @GetMapping(value = "/books")
+    public Set<LibraryDto> getAllLibrariesByBookTitle(@RequestParam @IsTitleBook String bookTitle) {
+        return libraryService.getAllLibrariesByBookTitle(bookTitle);
+    }
+
+    @ApiOperation("Show all books in library")
+    @ResponseStatus(HttpStatus.OK)
+    @GetMapping(value = "/books/{libraryName}")
+    public Set<BookDto> getAllBooks(@PathVariable @IsNameLibrary String libraryName) {
+        return libraryService.getAllBooks(libraryName);
+    }
+
+    @ApiOperation(value = "Reserved book (USER)", authorizations = {@Authorization(value = "basicAuth")})
+    @PreAuthorize("hasAnyRole('USER')")
+    @ResponseStatus(HttpStatus.OK)
+    @PostMapping(value = "/reserve")
+    public void reserveBook(@RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName, Authentication authentication) {
+        libraryService.reserveBook(bookTitle, authentication.getName(), libraryName);
+    }
+
+    @ApiOperation(value = "Borrow book (USER)", authorizations = {@Authorization(value = "basicAuth")})
+    @PreAuthorize("hasAnyRole('USER')")
+    @ResponseStatus(HttpStatus.OK)
+    @PostMapping(value = "/borrow")
+    public void borrowBook(@RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName, Principal principal) {
+        libraryService.borrowBook(bookTitle, principal.getName(), libraryName);
+    }
+
+    @ApiOperation(value = "Return book (USER)", authorizations = {@Authorization(value = "basicAuth")})
+    @PreAuthorize("hasAnyRole('USER')")
+    @ResponseStatus(HttpStatus.OK)
+    @PostMapping(value = "/return")
+    public void returnBook(@RequestParam @IsTitleBook String bookTitle, @RequestParam @IsNameLibrary String libraryName, @AuthenticationPrincipal UserDetails activeUser, HttpServletRequest request) {
+        libraryService.returnBook(bookTitle, activeUser.getUsername(), libraryName, request);
     }
 }

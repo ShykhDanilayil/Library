@@ -5,8 +5,6 @@ import com.library.library.service.model.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
-import java.util.List;
-
 @Mapper
 public interface UserMapper {
     UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
@@ -14,6 +12,4 @@ public interface UserMapper {
     UserDto mapUserDto(User user);
 
     User mapUser(UserDto userDto);
-
-    List<UserDto> mapPageUserDto(List<User> users);
 }

@@ -9,15 +9,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Documented
-@Constraint(validatedBy = DescriptionValidator.class)
-@Target( { ElementType.METHOD, ElementType.FIELD })
+@Constraint(validatedBy = EmailValidator.class)
+@Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ValidDescription {
+public @interface EmailValid {
 
-    String message() default "Invalid book description";
+    String message() default "Incorrect email format!";
 
     Class<?>[] groups() default {};
 
     Class<? extends Payload>[] payload() default {};
-
 }
